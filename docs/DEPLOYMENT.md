@@ -88,3 +88,7 @@ Preview 是临时部署，但也会有真实 HTTPS 网址。Vercel 的 Deploymen
 7. 使用无痕窗口检查访问保护是否符合你的预期。
 
 不同浏览器、设备及每次不同 Preview 域名的 localStorage 相互独立，不会同步数据。Vercel 提供 HTTPS 托管，不会自动把本地演示变成云端数据库产品。
+
+## 简历编辑器更新
+
+`/resume` 已具备实际导入、编辑与 PDF 导出。Vercel 使用 Node.js 函数和随包 Chromium；不需 AI、Supabase 或字体服务密钥。函数最长 60 秒，限制文件 3MB。部署后请上传自己的脱敏 DOCX 测试预览、编辑与 PDF 下载。若报错，保留响应状态与错误提示即可，不要把原始简历放进公开日志。当前源码使用 `preview-initial` 无斜杠分支导入，避免 Vercel 把斜杠误判为子目录。详见 [简历工具部署说明](RESUME.md)。

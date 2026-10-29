@@ -374,7 +374,7 @@ export function Home() {
               n: "02",
               title: "智能简历",
               desc: "让每一段经历，被更清楚、更有力地表达。",
-              cta: "了解简历工具",
+              cta: "打开简历编辑器",
               class: "sand",
             },
             {

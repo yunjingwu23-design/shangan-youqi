@@ -21,6 +21,8 @@ export function Logo({ large = false }: { large?: boolean }) {
 const nav = [
   ["/jobs", "找岗位"],
   ["/workspace", "求职工作台"],
+  ["/resume", "智能简历"],
+  ["/review", "面试复盘"],
   ["/interviews", "面经中心"],
   ["/mock", "真人 Mock"],
 ];
@@ -39,7 +41,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             {nav.map(([href, label]) => (
               <Link
                 onClick={() => setOpen(false)}
-                className={path.startsWith(href) ? "active" : ""}
+                className={`${path.startsWith(href) ? "active" : ""} ${["/interviews", "/mock"].includes(href) ? "nav-secondary" : ""}`}
                 href={href}
                 key={href}
               >
@@ -50,8 +52,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <div className="tools-menu">
               <button
                 className={
-                  ["/resume", "/review", "/radar", "/store", "/calendar"].some(
-                    (v) => path.startsWith(v),
+                  ["/radar", "/store", "/calendar"].some((v) =>
+                    path.startsWith(v),
                   )
                     ? "active"
                     : ""
@@ -61,8 +63,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
               </button>
               <div className="tools-dropdown">
                 {[
-                  ["/resume", "智能简历"],
-                  ["/review", "面试复盘"],
                   ["/radar", "面经雷达"],
                   ["/store", "资料商城"],
                   ["/calendar", "招聘日历"],

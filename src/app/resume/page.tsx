@@ -1,4 +1,4 @@
-import { PendingModule } from "@/components/modules";
+import { ResumeEditor } from "@/components/resume/editor";
 export default function Page() {
-  return <PendingModule kind="resume" />;
+  return <ResumeEditor />;
 }

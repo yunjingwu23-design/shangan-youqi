@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { clearResumes } from "@/lib/resume/storage";
 import { useState } from "react";
 import {
   ArrowUpRight,
@@ -205,18 +206,24 @@ export function Account() {
       {deleting && (
         <Modal title="清除本地演示数据？" onClose={() => setDeleting(false)}>
           <p>
-            会移除本浏览器的资料、工作台、收藏、复盘和预约意向。无法撤销，也不会影响其他设备。
+            会移除本浏览器的资料、工作台、收藏、简历版本、复盘和预约意向。无法撤销，也不会影响其他设备。
           </p>
           <div className="modal-actions">
             <Button variant="outline" onClick={() => setDeleting(false)}>
               取消
             </Button>
             <Button
-              onClick={() => {
-                Object.keys(localStorage)
-                  .filter((k) => k.startsWith("sayq:"))
-                  .forEach((k) => localStorage.removeItem(k));
-                location.reload();
+              onClick={async () => {
+                try {
+                  await clearResumes();
+                  Object.keys(localStorage)
+                    .filter((k) => k.startsWith("sayq:"))
+                    .forEach((k) => localStorage.removeItem(k));
+                  location.reload();
+                } catch {
+                  setNotice("未能清除简历库，请检查浏览器存储设置后重试。");
+                  setDeleting(false);
+                }
               }}
             >
               确认删除
