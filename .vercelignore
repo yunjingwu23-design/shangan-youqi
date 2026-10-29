@@ -1,0 +1,15 @@
+# Keep original documents and local tools in Git, but out of CLI deployment uploads.
+.git
+.vercel
+node_modules
+.next
+docs
+supabase
+tests
+test-results
+playwright-report
+playwright.config.ts
+*.tsbuildinfo
+*.zip
+.env*
+next-env.d.ts
