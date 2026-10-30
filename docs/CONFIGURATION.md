@@ -58,3 +58,28 @@ npm start
 ## 云环境现状
 
 本轮使用本地生成并忽略提交的开发凭证完成验证；没有连接或修改你的托管项目。你已说明项目存在，将稍后在环境设置配置。配置完成后，还需应用迁移、设置 SMTP/邮件模板并执行上面的真实邮箱验收。保存云环境草稿与发布云环境是独立操作。
+
+## 验证码发送前的数据库限流故障诊断
+
+页面提示「验证服务暂不可用，请稍后重试。」对应 `consume_auth_rate_limit` RPC 失败或响应格式异常。该路径在发邮件之前执行，不能凭此提示认定 SMTP 故障。限流失败仍拒绝发信，不能通过关闭限流或给匿名用户授予该函数权限来消除错误。
+
+服务端会记录 `AUTH_RATE_LIMIT_RPC_FAILED`，仅带 HTTP 状态与经过白名单检查的 PostgreSQL/PostgREST 错误码，不记录上游错误正文、密钥、邮箱或限流标识。
+
+- HTTP 401：检查 `SUPABASE_SERVICE_ROLE_KEY` 是否为同一个 Supabase 项目的完整服务端密钥，不能误填公开 key。
+- `PGRST202`：检查函数名称/参数签名与 API schema cache；确认函数存在后可在 SQL Editor 执行 `NOTIFY pgrst, 'reload schema';` 刷新缓存。
+- `42501`：检查 service_role 的函数执行权限、public schema 使用权限及实际请求的角色；不要扩大到 anon/authenticated。
+- `42P01` / `42883`：分别检查所需表或函数是否已在目标项目完成迁移。
+- HTTP 200、`INVALID_RPC_RESPONSE`：函数返回值必须包含布尔字段 `allowed`，不能把其他格式当成放行。
+
+可在目标项目 SQL Editor 先执行以下只读检查，再根据错误码修复对应项：
+
+```sql
+select
+  to_regclass('private.auth_rate_limits') is not null as rate_limit_table_exists,
+  to_regprocedure('public.consume_auth_rate_limit(text,integer,integer)') is not null as rate_limit_function_exists,
+  coalesce(has_function_privilege(
+    'service_role',
+    to_regprocedure('public.consume_auth_rate_limit(text,integer,integer)'),
+    'EXECUTE'
+  ), false) as service_role_can_execute;
+```

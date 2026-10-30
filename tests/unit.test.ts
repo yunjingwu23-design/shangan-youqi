@@ -1,3 +1,4 @@
+import { authLimitDiagnostic } from '../lib/auth-diagnostics';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -66,4 +67,30 @@ test('content and fields have explicit limits and valid types', () => {
     entrySchema.safeParse({ kind: 'resume', title: 'A', content: 'a'.repeat(20001) }).success,
     false
   );
+});
+
+test('auth diagnostics retain useful HTTP/SQL codes without logging upstream secrets', () => {
+  const sensitive = 'sensitive-example-key';
+  const error = {
+    code: '42501',
+    message: sensitive,
+    details: 'person@example.com',
+    hint: sensitive,
+  };
+  const result = authLimitDiagnostic(403, error);
+  assert.deepEqual(result, { httpStatus: 403, errorCode: '42501' });
+  assert.equal(JSON.stringify(result).includes(sensitive), false);
+  assert.equal(JSON.stringify(result).includes('person@example.com'), false);
+  assert.equal(authLimitDiagnostic(404, { code: 'PGRST202' }).errorCode, 'PGRST202');
+});
+
+test('auth diagnostics reject arbitrary error code content and distinguish malformed RPC responses', () => {
+  assert.deepEqual(authLimitDiagnostic(401, { code: 'sensitive-example-key' }), {
+    httpStatus: 401,
+    errorCode: 'UPSTREAM_ERROR',
+  });
+  assert.deepEqual(authLimitDiagnostic(200, null), {
+    httpStatus: 200,
+    errorCode: 'INVALID_RPC_RESPONSE',
+  });
 });
