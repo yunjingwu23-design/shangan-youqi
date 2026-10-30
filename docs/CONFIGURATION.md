@@ -63,7 +63,12 @@ npm start
 
 页面提示「验证服务暂不可用，请稍后重试。」对应 `consume_auth_rate_limit` RPC 失败或响应格式异常。该路径在发邮件之前执行，不能凭此提示认定 SMTP 故障。限流失败仍拒绝发信，不能通过关闭限流或给匿名用户授予该函数权限来消除错误。
 
-服务端会记录 `AUTH_RATE_LIMIT_RPC_FAILED`，仅带 HTTP 状态与经过白名单检查的 PostgreSQL/PostgREST 错误码，不记录上游错误正文、密钥、邮箱或限流标识。
+服务端会记录 `AUTH_RATE_LIMIT_RPC_FAILED`，仅带 HTTP 状态、经过白名单检查的 PostgreSQL/PostgREST 错误码、固定的权限资源标签，以及服务端凭证的类型/一致性检查结果。不记录上游错误正文、密钥、邮箱或限流标识。旧 JWT 的角色与项目标识只用于诊断，不构成认证或授权依据。
+
+- `credentialKind` 为 `publishable` / `legacy_anon`，或 `credentialMatchesPublicKey` 为 `true`：运行中的服务端误用了公开凭证。核对生产环境变量及本次部署是否包含更新，不能通过给匿名角色开放管理函数修复。
+- `credentialProjectMatches` 为 `false`：旧 service_role key 与目标 Supabase URL 不属于同一项目。新格式 key 不含可本地比较的项目标识，此值为 `null`，不代表已验证项目一致。
+- `credentialHasWhitespace` 为 `true`：检查粘贴时是否混入了空格或换行。
+- `permissionTarget` 为 `public_schema` / `rate_limit_function` / `rate_limit_table`：分别定位到 schema、函数或内部表权限；仅修复已确认的服务端角色权限。
 
 - HTTP 401：检查 `SUPABASE_SERVICE_ROLE_KEY` 是否为同一个 Supabase 项目的完整服务端密钥，不能误填公开 key。
 - `PGRST202`：检查函数名称/参数签名与 API schema cache；确认函数存在后可在 SQL Editor 执行 `NOTIFY pgrst, 'reload schema';` 刷新缓存。

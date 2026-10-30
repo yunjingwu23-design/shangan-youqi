@@ -1,4 +1,8 @@
-import { authLimitDiagnostic } from '../lib/auth-diagnostics';
+import {
+  adminCredentialDiagnostic,
+  authLimitDiagnostic,
+  authLimitPermissionTarget,
+} from '../lib/auth-diagnostics';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -93,4 +97,57 @@ test('auth diagnostics reject arbitrary error code content and distinguish malfo
     httpStatus: 200,
     errorCode: 'INVALID_RPC_RESPONSE',
   });
+});
+
+test('credential diagnostics distinguish public and admin keys without disclosing values or claims', () => {
+  const url = 'https://example-project.supabase.co';
+  const publicKey = 'sb_publishable_synthetic-test-value';
+  assert.deepEqual(adminCredentialDiagnostic(url, publicKey, publicKey), {
+    credentialKind: 'publishable',
+    credentialMatchesPublicKey: true,
+    credentialProjectMatches: null,
+    credentialHasWhitespace: false,
+  });
+  const secret = 'sb_secret_synthetic-test-value';
+  assert.equal(adminCredentialDiagnostic(url, secret, publicKey).credentialKind, 'secret');
+  assert.equal(JSON.stringify(adminCredentialDiagnostic(url, secret)).includes(secret), false);
+  const legacy = (role: string, ref: string) =>
+    `synthetic.${Buffer.from(
+      JSON.stringify({
+        role,
+        ref,
+        email: 'private@example.com',
+      })
+    ).toString('base64url')}.signature`;
+  const matching = adminCredentialDiagnostic(url, legacy('service_role', 'example-project'));
+  assert.equal(matching.credentialKind, 'legacy_service_role');
+  assert.equal(matching.credentialProjectMatches, true);
+  assert.equal(JSON.stringify(matching).includes('private@example.com'), false);
+  const wrongProject = adminCredentialDiagnostic(url, legacy('service_role', 'other-project'));
+  assert.equal(wrongProject.credentialProjectMatches, false);
+  assert.equal(
+    adminCredentialDiagnostic(url, legacy('anon', 'example-project')).credentialKind,
+    'legacy_anon'
+  );
+  assert.equal(
+    adminCredentialDiagnostic(url, legacy('sensitive-role', 'example-project')).credentialKind,
+    'legacy_other'
+  );
+  assert.equal(adminCredentialDiagnostic(url, 'bad.!.jwt').credentialKind, 'unknown');
+  assert.equal(adminCredentialDiagnostic(url).credentialKind, 'missing');
+  assert.equal(adminCredentialDiagnostic(url, `${secret}\n`).credentialHasWhitespace, true);
+});
+
+test('permission diagnostics emit only fixed resource labels', () => {
+  for (const [message, expected] of [
+    ['permission denied for schema public', 'public_schema'],
+    ['permission denied for schema private', 'private_schema'],
+    ['permission denied for function consume_auth_rate_limit', 'rate_limit_function'],
+    ['permission denied for table auth_rate_limits', 'rate_limit_table'],
+    ['permission denied for table private-sensitive-name', 'unknown'],
+    ['sensitive@example.com sb_secret_private', 'unknown'],
+  ]) {
+    assert.equal(authLimitPermissionTarget({ message }), expected);
+  }
+  assert.equal(authLimitPermissionTarget(null), 'unknown');
 });

@@ -3,7 +3,11 @@ import { createHmac } from 'node:crypto';
 import { isIP } from 'node:net';
 import { adminSupabase } from '@/lib/supabase/admin';
 import { ApiError } from '@/lib/api';
-import { authLimitDiagnostic } from '@/lib/auth-diagnostics';
+import {
+  adminCredentialDiagnostic,
+  authLimitDiagnostic,
+  authLimitPermissionTarget,
+} from '@/lib/auth-diagnostics';
 export async function consumeLimit(
   scope: string,
   identifier: string,
@@ -20,7 +24,15 @@ export async function consumeLimit(
   });
   // Fail closed when the persistent limiter is unavailable.
   if (error || !data || typeof data.allowed !== 'boolean') {
-    console.error('AUTH_RATE_LIMIT_RPC_FAILED', authLimitDiagnostic(status, error));
+    console.error('AUTH_RATE_LIMIT_RPC_FAILED', {
+      ...authLimitDiagnostic(status, error),
+      ...adminCredentialDiagnostic(
+        process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+        process.env.SUPABASE_SERVICE_ROLE_KEY,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      ),
+      permissionTarget: authLimitPermissionTarget(error),
+    });
     throw new ApiError(503, '验证服务暂不可用，请稍后重试。');
   }
   if (!data.allowed) throw new ApiError(429, '操作过于频繁，请稍后再试。', data.retry_after);

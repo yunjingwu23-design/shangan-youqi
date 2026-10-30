@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { randomBytes, createHmac } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { createClient } from '@supabase/supabase-js';
+import { adminCredentialDiagnostic, authLimitPermissionTarget } from '../lib/auth-diagnostics';
 import { admin, anonKey, base, dbUrl, mailboxCode, SessionClient } from './helpers';
 
 test('real Supabase OTP, persisted data and RLS isolation', async (t) => {
@@ -231,6 +232,21 @@ test('real Supabase OTP, persisted data and RLS isolation', async (t) => {
   });
   await t.test('limiter is service-only and atomic across concurrent requests', async () => {
     const bucket = randomBytes(32).toString('hex');
+    const anonymous = createClient(dbUrl, anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const anonymousResult = await anonymous.rpc('consume_auth_rate_limit', {
+      bucket,
+      maximum: 3,
+      period_seconds: 60,
+    });
+    assert.equal(anonymousResult.status, 401);
+    assert.equal(anonymousResult.error?.code, '42501');
+    assert.equal(authLimitPermissionTarget(anonymousResult.error), 'rate_limit_function');
+    assert.equal(
+      adminCredentialDiagnostic(dbUrl, anonKey, anonKey).credentialMatchesPublicKey,
+      true
+    );
     const denied = await db.db.rpc('consume_auth_rate_limit', {
       bucket,
       maximum: 3,
