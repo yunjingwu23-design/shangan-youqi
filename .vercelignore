@@ -1,0 +1,12 @@
+.git
+.next
+node_modules
+.env*
+.local
+infra
+supabase/.temp
+playwright-report
+test-results
+tests
+attachments
+*.tsbuildinfo

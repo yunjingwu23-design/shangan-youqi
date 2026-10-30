@@ -1,2 +1,59 @@
-# shangan-youqi
-上岸有期 AI 求职平台
+# 上岸有期
+
+真实邮箱验证码登录与私有求职工作台。技术栈：Next.js 16 / React 19 / TypeScript / Supabase Auth / PostgreSQL RLS。
+
+本次优先交付账号底座，不包含 PRD 中的公开岗位聚合、管理员后台、文件解析、AI 服务或支付。官方 Logo 原样取自用户提供的 V1.4 交付包；文档中的旧微信登录优先级，以本次「邮箱 OTP 优先、微信即将开放」要求为准。
+
+## 本地启动
+
+需要 Node.js 22.13+（当前验证 Node.js 24）、npm、Docker Compose v2。
+
+```bash
+cd /workspace/shangan-youqi
+npm ci
+npm run db:start
+npm run dev
+```
+
+`db:start` 启动真实 Supabase Auth、PostgREST、轻量 PostgreSQL 17 和 Mailpit，应用 SQL 迁移，并在不存在时生成私有的 `.env.local`。不会覆盖已有配置，也不会修改任何线上项目。所有数据库/API/邮件端口仅绑定本机回环地址；此 Docker 栈只用于开发测试，正式环境使用托管 Supabase。邮件验证码在本地 Mailpit（54324 端口）查看。
+
+本地数据保留在 Docker volume `syq-auth-local_syq_db`；`npm run db:stop` 只停止服务，不删除数据。再次 `npm run db:start` 可以恢复。当前脚本用于首次初始化本次迁移；新增迁移后应单独应用，不能靠重复启动代替迁移。
+
+环境已经隔离，使用现有 checkout；无需新建 Git worktree。受限云终端中的网络、Docker 和 Chromium 命令需要平台允许的执行模式。
+
+## 已实现
+
+- 真实六位邮箱 OTP：首次注册、再次登录、错误/过期/已使用验证码拒绝、重发倒计时、退出、HTTP-only Cookie 会话恢复和刷新。
+- 服务端验证 Supabase 用户，再映射到独立且稳定的 `app_users.user_id`，不以邮箱或昵称作为内部 ID。
+- 自动创建资料；昵称、意向岗位、城市、简介可修改并跨设备读取。
+- 投递、简历文字草稿、收藏、面试文字复盘的真实新增、编辑、删除和分页读取。工作台从这些私人记录派生。
+- 所有私人数据绑定 `user_id`；服务端按当前用户过滤，同时 PostgreSQL RLS 隔离。普通业务读写不使用管理员密钥。
+- 全局数据库限流、邮箱/IP 维度限制、同源校验、输入大小和字段白名单、私有响应禁止缓存。
+- 删除个人数据（账号保留）及注销账号（邮箱验证后 10 分钟内，级联删除身份与业务数据）。
+- 官方 Logo、响应式登录/工作台、空状态、错误态、加载态、删除确认、基础无障碍。
+- 微信按钮禁用并标注「即将开放」，没有二维码、假授权或自动账号合并。
+
+跨设备同步采用登录/页面加载/切换分类/返回标签页/手动刷新时从云端重新读取；当前没有实时 WebSocket 协同。未上线的简历解析和 AI 复盘不伪装为可用。
+
+## 配置与数据库
+
+- [环境变量和正式 Supabase 配置](docs/CONFIGURATION.md)
+- [完整数据库迁移](supabase/migrations/202610300001_auth_and_workspace.sql)
+- [测试步骤与实际权限结果](docs/TESTING.md)
+- [身份模型与微信后续绑定约定](docs/SECURITY.md)
+
+## 验证
+
+先启动本地数据库和应用，然后运行：
+
+```bash
+npm run typecheck
+npm test
+npm run test:integration
+npm run test:e2e
+npm run build
+```
+
+集成和浏览器测试只允许本地数据库；会创建一次性测试邮箱、发送真实邮件到本地收件箱、保存真实数据并清理账号。Playwright 默认使用 `/usr/bin/chromium`，其他机器可设置 `PLAYWRIGHT_CHROMIUM_PATH` 指向 Chromium，或安装浏览器后修改其配置。
+
+正式部署使用 HTTPS、生产 Supabase 项目和已配置的自有 SMTP。当前验证的是本地真实 Auth/数据库，尚未验证用户的托管 Supabase、生产邮件送达或线上部署。
