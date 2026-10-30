@@ -6,7 +6,7 @@
 2. 选择目标团队，项目名使用 `shangan-youqi`，Root Directory 保持仓库根目录。`vercel.json` 已配置 Next.js、冻结依赖安装和生产构建，Node.js 固定为已验证的 24.x。
 3. 在 Vercel 项目的 Environment Variables 中填写正式 Supabase 配置，详见 CONFIGURATION.md。未填写时可以构建并查看登录页，但无法进行真实邮箱登录；不能上传本机回环地址或开发密钥。
 4. 点击 Deploy，等状态变成 Ready，使用 Vercel 实际分配的公网域名。若已有关联到该 GitHub 仓库的 Vercel 项目，推送 main 通常会自动触发部署，可在该项目的 Deployments 中检查结果。
-5. 将 `APP_URL` 设置为最终访问的 HTTPS origin，更新后重新部署。正式邮件登录还需在 Supabase 应用迁移、配置 SMTP 和六位验证码模板。
+5. 将 `APP_URL` 设置为最终访问的 HTTPS origin，更新后重新部署。正式邮件登录还需在 Supabase 应用迁移、配置 SMTP 和含完整 `{{ .Token }}` 的验证码模板；前后端均兼容 6–10 位数字。
 
 这条路径由 Vercel 的官方 GitHub 集成部署，不需要将 Vercel Token 写入 GitHub 仓库，也不需要编辑当前 Codex 云环境。
 

@@ -31,16 +31,38 @@ test('real Supabase OTP, persisted data and RLS isolation', async (t) => {
     );
   });
   let codeA = '';
-  await t.test('new signup delivers six-digit OTP and establishes HTTP-only cookies', async () => {
-    codeA = await a.authenticate(emailA);
-    assert.match(codeA, /^\d{6}$/);
-    assert.equal((await a.request('/api/profile')).response.status, 200);
-    const { session } = await a.database();
-    ids.push(session.user.id);
-    await b.authenticate(emailB);
-    const other = await b.database();
-    ids.push(other.session.user.id);
-  });
+  await t.test(
+    'new signup delivers eight-digit OTP and establishes HTTP-only cookies',
+    async () => {
+      assert.equal(
+        (await a.request('/api/auth/otp', 'POST', { email: emailA })).response.status,
+        200
+      );
+      codeA = await mailboxCode(emailA);
+      assert.match(codeA, /^[0-9]{8}$/);
+      // Verify the complete code, never a truncated six-digit prefix.
+      assert.equal(
+        (
+          await guest.request('/api/auth/verify', 'POST', {
+            email: emailA,
+            token: codeA.slice(0, 6),
+          })
+        ).response.status,
+        400
+      );
+      assert.equal(
+        (await a.request('/api/auth/verify', 'POST', { email: emailA, token: codeA })).response
+          .status,
+        200
+      );
+      assert.equal((await a.request('/api/profile')).response.status, 200);
+      const { session } = await a.database();
+      ids.push(session.user.id);
+      await b.authenticate(emailB);
+      const other = await b.database();
+      ids.push(other.session.user.id);
+    }
+  );
   const da = await a.database();
   const db = await b.database();
   const pa = (await a.request('/api/profile')).data.profile;

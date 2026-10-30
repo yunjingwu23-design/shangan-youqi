@@ -31,10 +31,10 @@
 在 Supabase Authentication 设置中：
 
 1. 启用 Email provider、允许新用户注册、保持邮箱确认开启；不启用匿名登录，不配置微信或其他 OAuth provider，不启用手动身份 linking。
-2. Site URL 设置为正式 `APP_URL`。本次只使用邮箱六位验证码，没有站外回跳参数，无需通配重定向 URL。
+2. Site URL 设置为正式 `APP_URL`。本次只使用邮箱数字验证码，没有站外回跳参数，无需通配重定向 URL。
 3. 配置你拥有的 SMTP 邮件服务、发件域名和发件邮箱，并完成服务商要求的域名验证。Supabase 默认邮件服务常限制收件人或发送额度，不能作为任意公众邮箱送达的验收依据。
-4. 把 **Confirm signup** 和 **Magic Link** 两类邮件正文都改为 `supabase/templates/otp.html` 的内容，确保包含 `{{ .Token }}`。不要只放 `ConfirmationURL`，否则用户收不到本页面要求的六位码。
-5. OTP 长度设为 6、有效期 600 秒、同一邮箱发送间隔至少 60 秒；设置项目级邮件发送和 token verification 速率上限。可参考 `supabase/config.toml` 的本地参数，托管项目的配置需在其控制台独立设置。
+4. 把 **Confirm signup** 和 **Magic Link** 两类邮件正文都改为 `supabase/templates/otp.html` 的内容，确保包含完整的 `{{ .Token }}`。不要只放 `ConfirmationURL` 或截取验证码。
+5. 应用前端与服务端统一接受 6–10 位数字验证码，完整提交给 Supabase 校验；现有项目发 8 位码无需修改托管项目设置。本地默认长度为 8、有效期 600 秒、同一邮箱发送间隔至少 60 秒；托管项目需独立检查实际有效期并设置项目级邮件发送和 token verification 速率上限。
 6. 给两个真实测试邮箱分别发码，验证首登、再次登录、垃圾箱送达和限流。SMTP 发信失败时页面会明确提示，不能只看到 UI 就宣布邮件上线。
 
 应用限流：每邮箱 1 次/60 秒、5 次/小时；每可信 IP（或保守共享桶）30 次/小时；验证每邮箱 10 次/10 分钟、每 IP 60 次/10 分钟。限流存储在 PostgreSQL，跨实例原子生效，故障时拒绝继续发送。不要仅依赖应用限流：Supabase Auth 是公开 API，托管项目自身的发送间隔、IP/token verification 上限也必须配置。高流量公开上线时可进一步接入 Supabase CAPTCHA（本次未实现）。

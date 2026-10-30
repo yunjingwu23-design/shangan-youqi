@@ -22,7 +22,7 @@ export async function mailboxCode(email: string, previousCode?: string) {
       const body = await (
         await fetch(`http://127.0.0.1:54324/api/v1/message/${message.ID}`)
       ).json();
-      const code = (body.Text || body.HTML || '').match(/\b\d{6}\b/)?.[0];
+      const code = (body.Text || body.HTML || '').match(/\b[0-9]{6,10}\b/)?.[0];
       if (code && code !== previousCode) return code as string;
     }
     await setTimeout(250);

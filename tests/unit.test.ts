@@ -16,13 +16,21 @@ test('email is normalized and invalid addresses rejected', () => {
   assert.equal(emailSchema.parse('  Alice@Example.com '), 'alice@example.com');
   assert.equal(emailSchema.safeParse('not-email').success, false);
 });
-test('OTP requires exactly six digits', () => {
-  for (const token of ['12345', '1234567', 'abcdef', '<img/>'])
+test('OTP accepts complete 6–10 digit codes, including eight digits and leading zeroes', () => {
+  for (const token of [
+    '12345',
+    '12345678901',
+    'abcdef',
+    '<img/>',
+    '１２３４５６７８',
+    '12 345678',
+    '12345678\n',
+  ])
     assert.equal(otpVerifySchema.safeParse({ email: 'a@example.com', token }).success, false);
-  assert.equal(
-    otpVerifySchema.safeParse({ email: 'a@example.com', token: '123456' }).success,
-    true
-  );
+  for (const token of ['012345', '0123456', '01234567', '012345678', '0123456789']) {
+    const parsed = otpVerifySchema.parse({ email: 'a@example.com', token });
+    assert.equal(parsed.token, token, 'must not truncate codes or lose leading zeroes');
+  }
 });
 test('clients cannot submit their own user_id or overwrite ownership/kind', () => {
   assert.equal(

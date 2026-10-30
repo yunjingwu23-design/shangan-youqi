@@ -20,8 +20,18 @@ test('desktop: official logo, real OTP, persisted workspace, profile, restored s
   await page.getByRole('button', { name: '获取邮箱验证码' }).click();
   await expect(page.getByRole('status')).toContainText('验证码已发送');
   const code = await mailboxCode(email);
-  await page.getByLabel('邮箱验证码').fill(code);
+  expect(code).toMatch(/^[0-9]{8}$/);
+  const tokenInput = page.getByLabel('邮箱验证码');
+  await tokenInput.fill(code);
+  await expect(tokenInput).toHaveValue(code);
+  expect(
+    await tokenInput.evaluate((input: HTMLInputElement) => input.checkValidity())
+  ).toBeTruthy();
+  const verification = page.waitForRequest(
+    (request) => request.url().endsWith('/api/auth/verify') && request.method() === 'POST'
+  );
   await page.getByRole('button', { name: '验证并进入工作台' }).click();
+  expect((await verification).postDataJSON().token).toBe(code);
   await expect(page).toHaveURL('/workspace');
   await expect(page.getByRole('heading', { name: '第一步，从一条记录开始' })).toBeVisible();
   const cookies = await page.context().cookies();

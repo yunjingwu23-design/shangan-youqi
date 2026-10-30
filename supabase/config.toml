@@ -37,7 +37,7 @@ enable_signup = true
 enable_confirmations = true
 double_confirm_changes = true
 max_frequency = "60s"
-otp_length = 6
+otp_length = 8
 otp_expiry = 600
 [auth.email.template.confirmation]
 subject = "上岸有期 · 邮箱验证码"

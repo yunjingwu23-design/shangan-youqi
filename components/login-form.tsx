@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, LoaderCircle, Mail, MessageCircle, ChevronLeft } from 'lucide-react';
+import { OTP_INPUT_PATTERN, OTP_MIN_LENGTH, OTP_MAX_LENGTH } from '@/lib/otp';
 export function LoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -114,11 +115,12 @@ export function LoginForm() {
               type="text"
               inputMode="numeric"
               autoComplete="one-time-code"
-              pattern="[0-9]{6}"
-              maxLength={6}
+              pattern={OTP_INPUT_PATTERN}
+              minLength={OTP_MIN_LENGTH}
+              maxLength={OTP_MAX_LENGTH}
               value={token}
               onChange={(e) => setToken(e.target.value.replace(/\D/g, ''))}
-              placeholder="6 位验证码"
+              placeholder="请输入邮件中的完整验证码"
               required
             />
             <button

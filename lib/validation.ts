@@ -1,8 +1,12 @@
 import { z } from 'zod';
+import { OTP_PATTERN } from './otp';
 export const emailSchema = z.string().trim().toLowerCase().email('请输入有效的邮箱地址').max(254);
 export const otpRequestSchema = z.object({ email: emailSchema }).strict();
 export const otpVerifySchema = z
-  .object({ email: emailSchema, token: z.string().regex(/^\d{6}$/, '请输入 6 位验证码') })
+  .object({
+    email: emailSchema,
+    token: z.string().regex(OTP_PATTERN, '请输入邮件中的完整验证码（6–10 位数字）'),
+  })
   .strict();
 export const profileSchema = z
   .object({
