@@ -21,7 +21,7 @@ export function sameOrigin(request: Request) {
   if (!request.headers.get('content-type')?.startsWith('application/json'))
     throw new ApiError(415, '请使用 JSON 请求。');
 }
-export async function readBody(request: Request) {
+export async function readBody(request: Request, maximumBytes = 90000) {
   // Stream cap also handles requests without Content-Length.
   const reader = request.body?.getReader();
   if (!reader) throw new ApiError(400, '请求内容为空。');
@@ -31,7 +31,7 @@ export async function readBody(request: Request) {
     const { done, value } = await reader.read();
     if (done) break;
     bytes += value.byteLength;
-    if (bytes > 90000) {
+    if (bytes > maximumBytes) {
       await reader.cancel();
       throw new ApiError(413, '请求内容过大。');
     }

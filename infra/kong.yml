@@ -12,3 +12,19 @@ services:
       - name: rest
         strip_path: true
         paths: [/rest/v1/]
+  - name: storage
+    url: http://storage:5000/
+    plugins:
+      - name: cors
+        config:
+          origins: [http://localhost:3000]
+          methods: [GET, HEAD, PUT, POST, DELETE, OPTIONS]
+          headers:
+            [Content-Type, x-upsert, Range, Authorization, apikey, x-client-info, cache-control]
+          exposed_headers: [Content-Range, Content-Length]
+          credentials: false
+          max_age: 600
+    routes:
+      - name: storage
+        strip_path: true
+        paths: [/storage/v1/]

@@ -1,0 +1,9 @@
+.git
+.next
+node_modules
+.env*
+.local
+.vercel
+test-results
+playwright-report
+attachments

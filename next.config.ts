@@ -1,4 +1,8 @@
 import type { NextConfig } from 'next';
+// Allow direct private Storage upload/playback only to this configured project.
+const storageOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL
+  ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin
+  : '';
 const scriptSources =
   process.env.NODE_ENV === 'production'
     ? "'self' 'unsafe-inline'"
@@ -17,7 +21,7 @@ const config: NextConfig = {
           { key: 'Cache-Control', value: 'no-store' },
           {
             key: 'Content-Security-Policy',
-            value: `default-src 'self'; script-src ${scriptSources}; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`,
+            value: `default-src 'self'; script-src ${scriptSources}; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' ${storageOrigin}; media-src 'self' ${storageOrigin}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`,
           },
         ],
       },

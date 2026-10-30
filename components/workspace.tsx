@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Brand } from '@/components/brand';
 import { type Entry, type Profile, kindLabels, statusLabels } from '@/lib/validation';
 import {
@@ -38,7 +39,15 @@ const emptyDraft = {
   content: '',
   url: '',
 };
-export function Workspace({ email, userId }: { email: string; userId: string }) {
+export function Workspace({
+  email,
+  userId,
+  interviewsEnabled = false,
+}: {
+  email: string;
+  userId: string;
+  interviewsEnabled?: boolean;
+}) {
   const router = useRouter();
   const [kind, setKind] = useState<Kind>('application');
   const [settings, setSettings] = useState(false);
@@ -192,6 +201,12 @@ export function Workspace({ email, userId }: { email: string; userId: string }) 
             </button>
           );
         })}
+        {interviewsEnabled && (
+          <Link className="nav-item" href="/workspace/interviews">
+            <MessageSquareText size={18} />
+            AI 面试复盘<span className="nav-label">内测</span>
+          </Link>
+        )}
         <div className="sidebar-bottom">
           <div className="private-space">
             <ShieldCheck size={18} />

@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { randomBytes, createHmac } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { setTimeout } from 'node:timers/promises';
@@ -18,6 +18,8 @@ const secretPath = '.local/jwt-secret';
 if (!existsSync(secretPath))
   writeFileSync(secretPath, randomBytes(32).toString('hex'), { mode: 0o600 });
 environment.LOCAL_JWT_SECRET = readFileSync(secretPath, 'utf8').trim();
+environment.LOCAL_ANON_KEY = token('anon');
+environment.LOCAL_SERVICE_KEY = token('service_role');
 function compose(...args) {
   const result = spawnSync(
     'docker',
@@ -177,7 +179,87 @@ if (check.stdout.trim() === 'f') {
     throw new Error('Migration failed');
   }
 }
+// Storage runs its own schema migrations before the bucket/RLS migration.
+for (let attempt = 0; ; attempt++) {
+  const ready = spawnSync(
+    'docker',
+    [
+      '--host=unix:///var/run/docker.sock',
+      'exec',
+      'syq-auth-local-db-1',
+      'psql',
+      '-U',
+      'postgres',
+      '-tAc',
+      "select to_regclass('storage.objects') is not null",
+    ],
+    { env: environment, encoding: 'utf8' }
+  );
+  if (ready.status === 0 && ready.stdout.trim() === 't') break;
+  if (attempt >= 60) throw new Error('Local Storage schema did not become ready');
+  await setTimeout(500);
+}
+function localSql(sql) {
+  const run = spawnSync(
+    'docker',
+    [
+      '--host=unix:///var/run/docker.sock',
+      'exec',
+      '-i',
+      'syq-auth-local-db-1',
+      'psql',
+      '-U',
+      'postgres',
+      '-v',
+      'ON_ERROR_STOP=1',
+      '-1',
+    ],
+    { env: environment, input: sql, encoding: 'utf8' }
+  );
+  if (run.status !== 0) {
+    process.stderr.write(run.stderr);
+    throw new Error('Local migration failed');
+  }
+  return run.stdout;
+}
+// Hosted Supabase bootstraps these Storage privileges; a stock local Postgres
+// does not. Row policies below remain authoritative for ordinary users.
+localSql(`grant usage on schema storage to anon,authenticated,service_role;
+grant all on all tables in schema storage to service_role;
+grant all on all sequences in schema storage to service_role;
+grant select on storage.buckets to anon,authenticated;
+grant select on storage.objects to anon;
+grant select,insert,update,delete on storage.objects to authenticated;`);
+localSql(
+  "create table if not exists private.local_migrations(name text primary key); insert into private.local_migrations values('202610300001_auth_and_workspace.sql') on conflict do nothing;"
+);
+for (const name of readdirSync('supabase/migrations')
+  .filter((n) => n.endsWith('.sql'))
+  .sort()) {
+  const applied = spawnSync(
+    'docker',
+    [
+      '--host=unix:///var/run/docker.sock',
+      'exec',
+      'syq-auth-local-db-1',
+      'psql',
+      '-U',
+      'postgres',
+      '-tAc',
+      `select count(*) from private.local_migrations where name='${name}'`,
+    ],
+    { env: environment, encoding: 'utf8' }
+  );
+  if (applied.status !== 0) throw new Error('Cannot inspect migration ledger');
+  if (applied.stdout.trim() === '1') continue;
+  localSql(
+    readFileSync(`supabase/migrations/${name}`, 'utf8') +
+      `\ninsert into private.local_migrations values('${name}');`
+  );
+  console.log(`Applied ${name}`);
+}
 compose('kill', '-s', 'SIGUSR1', 'rest');
+compose('restart', 'gateway');
 function token(role) {
   const head = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
   const body = Buffer.from(

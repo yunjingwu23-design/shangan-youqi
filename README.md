@@ -2,11 +2,11 @@
 
 真实邮箱验证码登录与私有求职工作台。技术栈：Next.js 16 / React 19 / TypeScript / Supabase Auth / PostgreSQL RLS。
 
-本次优先交付账号底座，不包含 PRD 中的公开岗位聚合、管理员后台、文件解析、AI 服务或支付。官方 Logo 原样取自用户提供的 V1.4 交付包；文档中的旧微信登录优先级，以本次「邮箱 OTP 优先、微信即将开放」要求为准。
+第一批核心功能包含账号底座，以及新增的录音转写/AI 面试复盘内部测试版；不包含公开岗位聚合、管理员后台、智能简历解析或支付。官方 Logo 原样取自用户提供的 V1.4 交付包；文档中的旧微信登录优先级，以「邮箱 OTP 优先、微信即将开放」要求为准。
 
 ## 本地启动
 
-需要 Node.js 22.13+（当前验证 Node.js 24）、npm、Docker Compose v2。
+需要 Node.js 24、npm、Docker Compose v2；面试 Worker 和测试还需要 FFmpeg/FFprobe。
 
 ```bash
 cd /workspace/shangan-youqi
@@ -15,9 +15,9 @@ npm run db:start
 npm run dev
 ```
 
-`db:start` 启动真实 Supabase Auth、PostgREST、轻量 PostgreSQL 17 和 Mailpit，应用 SQL 迁移，并在不存在时生成私有的 `.env.local`。不会覆盖已有配置，也不会修改任何线上项目。所有数据库/API/邮件端口仅绑定本机回环地址；此 Docker 栈只用于开发测试，正式环境使用托管 Supabase。邮件验证码在本地 Mailpit（54324 端口）查看。
+`db:start` 启动真实 Supabase Auth、PostgREST、Storage、轻量 PostgreSQL 17 和 Mailpit，按本地迁移账本应用 SQL，并在不存在时生成私有的 `.env.local`。不会覆盖已有配置，也不会修改任何线上项目。所有发布端口仅绑定本机回环地址；此 Docker 栈只用于开发测试，正式环境使用托管 Supabase。邮件验证码在本地 Mailpit（54324 端口）查看。
 
-本地数据保留在 Docker volume `syq-auth-local_syq_db`；`npm run db:stop` 只停止服务，不删除数据。再次 `npm run db:start` 可以恢复。当前脚本用于首次初始化本次迁移；新增迁移后应单独应用，不能靠重复启动代替迁移。
+本地数据库和录音保留在 Docker volumes 中；`npm run db:stop` 只停止服务，不删除数据。再次启动会检查未应用的迁移。正式项目仍需独立执行迁移，不受本地脚本影响。
 
 环境已经隔离，使用现有 checkout；无需新建 Git worktree。受限云终端中的网络、Docker 和 Chromium 命令需要平台允许的执行模式。
 
@@ -33,7 +33,7 @@ npm run dev
 - 官方 Logo、响应式登录/工作台、空状态、错误态、加载态、删除确认、基础无障碍。
 - 微信按钮禁用并标注「即将开放」，没有二维码、假授权或自动账号合并。
 
-跨设备同步采用登录/页面加载/切换分类/返回标签页/手动刷新时从云端重新读取；当前没有实时 WebSocket 协同。未上线的简历解析和 AI 复盘不伪装为可用。
+跨设备同步采用登录/页面加载/切换分类/返回标签页/手动刷新时从云端重新读取；当前没有实时 WebSocket 协同。面试复盘使用持久队列和独立 Worker，默认 `INTERVIEWS_ENABLED=false`；没有 OpenAI Key 时不会返回伪造的成功转写或报告。
 
 ## 配置与数据库
 
@@ -41,6 +41,7 @@ npm run dev
 - [完整数据库迁移](supabase/migrations/202610300001_auth_and_workspace.sql)
 - [测试步骤与实际权限结果](docs/TESTING.md)
 - [身份模型与微信后续绑定约定](docs/SECURITY.md)
+- [录音转写与 AI 复盘架构、路由、成本及内部测试部署](docs/INTERVIEW_INTERNAL.md)
 
 ## 验证
 

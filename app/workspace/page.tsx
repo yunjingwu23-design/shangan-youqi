@@ -10,5 +10,11 @@ export default async function WorkspacePage() {
     if (error instanceof ApiError && error.status === 401) redirect('/login?reason=expired');
     throw error;
   }
-  return <Workspace email={identity.user.email || ''} userId={identity.userId} />;
+  return (
+    <Workspace
+      email={identity.user.email || ''}
+      userId={identity.userId}
+      interviewsEnabled={process.env.INTERVIEWS_ENABLED === 'true'}
+    />
+  );
 }
