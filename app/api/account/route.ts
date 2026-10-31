@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { api, actor, ApiError, databaseError, readBody } from '@/lib/api';
 import { adminSupabase } from '@/lib/supabase/admin';
 import { purgeInterviewAudio } from '@/lib/interviews/server';
+import { purgeResumeFiles } from '@/lib/resume-files/server';
 export const DELETE = api(async (request) => {
   z.object({ confirmation: z.literal('注销账号') })
     .strict()
@@ -18,9 +19,11 @@ export const DELETE = api(async (request) => {
   );
   if (!recent) throw new ApiError(403, '为保护账号，请退出并重新验证邮箱后，在 10 分钟内注销。');
   await purgeInterviewAudio(identity);
+  await purgeResumeFiles(identity);
   // The target always comes from the validated session, never from request input.
   const { error } = await adminSupabase().auth.admin.deleteUser(user.id);
   databaseError(error);
+  await purgeResumeFiles(identity);
   await db.auth.signOut({ scope: 'local' });
   return NextResponse.json({ deleted: true, redirectTo: '/login' });
 }, true);

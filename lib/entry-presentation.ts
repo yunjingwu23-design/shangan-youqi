@@ -3,6 +3,11 @@ export function entryPresentation(entry: Entry): { summary: string; editor: stri
   try {
     const value = JSON.parse(entry.content);
     if (!value || typeof value !== 'object') return { summary: entry.content, editor: null };
+    if (entry.kind === 'resume' && value.format === 'shangan-original-resume-v1')
+      return {
+        summary: `原版${value.fileType === 'docx' ? ' Word' : ' PDF'}简历 · ${typeof value.fileName === 'string' ? value.fileName : ''}`,
+        editor: `/resume?id=${entry.id}`,
+      };
     if (entry.kind === 'favorite' && value.format === 'shangan-resource-v1')
       return { summary: '已保存的免费面经与指南', editor: '/resources/mine' };
     if (entry.kind === 'resume' && value.format === 'shangan-resume-v1')

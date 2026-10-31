@@ -12,14 +12,14 @@ export class ApiError extends Error {
     super(message);
   }
 }
-export function sameOrigin(request: Request) {
+export function sameOrigin(request: Request, contentType = 'application/json') {
   if (
     request.headers.get('origin') !== config().origin ||
     request.headers.get('sec-fetch-site') === 'cross-site'
   )
     throw new ApiError(403, '请求来源无效，请从本站重新操作。');
-  if (!request.headers.get('content-type')?.startsWith('application/json'))
-    throw new ApiError(415, '请使用 JSON 请求。');
+  if (!request.headers.get('content-type')?.startsWith(contentType))
+    throw new ApiError(415, '请求格式不受支持。');
 }
 export async function readBody(request: Request, maximumBytes = 90000) {
   // Stream cap also handles requests without Content-Length.

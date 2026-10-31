@@ -5,8 +5,8 @@ const storageOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL
   : '';
 const scriptSources =
   process.env.NODE_ENV === 'production'
-    ? "'self' 'unsafe-inline'"
-    : "'self' 'unsafe-inline' 'unsafe-eval'";
+    ? "'self' 'unsafe-inline' 'wasm-unsafe-eval'"
+    : "'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'";
 const config: NextConfig = {
   poweredByHeader: false,
   async headers() {
@@ -21,7 +21,7 @@ const config: NextConfig = {
           { key: 'Cache-Control', value: 'no-store' },
           {
             key: 'Content-Security-Policy',
-            value: `default-src 'self'; script-src ${scriptSources}; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' ${storageOrigin}; media-src 'self' ${storageOrigin}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`,
+            value: `default-src 'self'; script-src ${scriptSources}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data: blob:; worker-src 'self' blob:; frame-src 'self' blob:; connect-src 'self' ${storageOrigin}; media-src 'self' ${storageOrigin}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`,
           },
         ],
       },

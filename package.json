@@ -16,11 +16,17 @@
     "db:start": "node scripts/local.mjs start",
     "db:stop": "node scripts/local.mjs stop",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test:resume-files": "node --import tsx --test --test-concurrency=1 tests/resume-files.test.ts"
   },
   "dependencies": {
+    "@embedpdf/pdfium": "2.15.1",
     "@supabase/ssr": "0.12.7",
     "@supabase/supabase-js": "2.118.0",
+    "@xmldom/xmldom": "0.9.12",
+    "docx-preview": "0.4.1",
+    "fflate": "0.8.2",
+    "harfbuzzjs": "1.6.4",
     "lucide-react": "1.65.0",
     "next": "16.4.3",
     "react": "19.3.1",

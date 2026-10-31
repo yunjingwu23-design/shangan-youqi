@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { api, actor, ApiError, databaseError, readBody } from '@/lib/api';
 import { resumeSaveSchema, readResume } from '@/lib/resume';
+import { readOriginal } from '@/lib/resume-files/model';
 export const GET = api(async (request) => {
   const { db, userId } = await actor();
   const params = new URL(request.url).searchParams;
@@ -17,7 +18,15 @@ export const GET = api(async (request) => {
       .maybeSingle();
     databaseError(error);
     if (!data) throw new ApiError(404, '未找到这份简历。');
-    return NextResponse.json({ resume: { ...data, ...readResume(data.content, data.id) } });
+    const original = readOriginal(data.content);
+    return NextResponse.json({
+      resume: {
+        ...data,
+        ...(original
+          ? { original, document: null, legacy: false }
+          : readResume(data.content, data.id)),
+      },
+    });
   }
   const offset = z.coerce
     .number()
@@ -27,14 +36,17 @@ export const GET = api(async (request) => {
     .parse(params.get('offset') || 0);
   const { data, error, count } = await db
     .from('workspace_entries')
-    .select('id,title,company,updated_at', { count: 'exact' })
+    .select('id,title,company,updated_at,content', { count: 'exact' })
     .eq('kind', 'resume')
     .eq('user_id', userId)
     .order('updated_at', { ascending: false })
     .range(offset, offset + 49);
   databaseError(error);
   return NextResponse.json({
-    resumes: data,
+    resumes: data?.map(({ content, ...item }) => ({
+      ...item,
+      fileType: readOriginal(content)?.fileType || null,
+    })),
     total: count,
     nextOffset: offset + 50 < (count || 0) ? offset + 50 : null,
   });
@@ -48,6 +60,16 @@ export const POST = api(async (request) => {
     content: JSON.stringify(input.document),
   };
   if (input.id) {
+    const existing = await db
+      .from('workspace_entries')
+      .select('content')
+      .eq('id', input.id)
+      .eq('user_id', userId)
+      .eq('kind', 'resume')
+      .maybeSingle();
+    databaseError(existing.error);
+    if (existing.data && readOriginal(existing.data.content))
+      throw new ApiError(400, '请在原版文件编辑器中保存；使用站内模板会另建副本。');
     if (!input.expectedUpdatedAt) throw new ApiError(400, '保存前请读取当前简历版本。');
     const { data, error } = await db
       .from('workspace_entries')

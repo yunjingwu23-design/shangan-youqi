@@ -4,14 +4,14 @@
 
 参考根目录 `.env.example`。本地开发可使用 `.env.local`；部署时使用平台的安全环境变量设置。不要在聊天、Git 或前端代码中保存密钥。
 
-| 变量                            | 用途                                                                                    |
-| ------------------------------- | --------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`      | 已有 Supabase 项目的 HTTPS API URL                                                      |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 该项目的 anon 或 publishable key；公开访问依靠 RLS 保护                                 |
-| `SUPABASE_SERVICE_ROLE_KEY`     | 同项目 service_role 或 secret key；只在服务器用于限流 RPC 和本人注销                    |
-| `APP_URL`                       | 唯一、精确的站点 origin，例如 `https://example.com`，不带路径；必须与浏览器访问域名一致 |
-| `AUTH_RATE_LIMIT_SECRET`        | 至少 32 字符的服务端随机密钥，用 `openssl rand -hex 32` 生成；所有实例共享并保持稳定    |
-| `TRUST_PROXY`                   | 默认 `false`；只有反向代理会覆盖而非透传用户伪造的 `X-Forwarded-For` 时设为 `true`      |
+| 变量                            | 用途                                                                                            |
+| ------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | 已有 Supabase 项目的 HTTPS API URL                                                              |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 该项目的 anon 或 publishable key；公开访问依靠 RLS 保护                                         |
+| `SUPABASE_SERVICE_ROLE_KEY`     | 同项目 service_role 或 secret key；仅服务端使用，负责限流、本人注销与验证所有权后的私有文件操作 |
+| `APP_URL`                       | 唯一、精确的站点 origin，例如 `https://example.com`，不带路径；必须与浏览器访问域名一致         |
+| `AUTH_RATE_LIMIT_SECRET`        | 至少 32 字符的服务端随机密钥，用 `openssl rand -hex 32` 生成；所有实例共享并保持稳定            |
+| `TRUST_PROXY`                   | 默认 `false`；只有反向代理会覆盖而非透传用户伪造的 `X-Forwarded-For` 时设为 `true`              |
 
 `NEXT_PUBLIC_` 名称下绝不能放管理员密钥。客户端本次只访问本站 API，不直接读写 Supabase；即使使用公开 anon key 绕过 API，数据库仍执行 RLS。
 
@@ -58,6 +58,12 @@ npm start
 ## 云环境现状
 
 本地验证使用忽略提交的开发凭证，没有直接连接或修改托管项目。用户已在 Vercel/Supabase 操作正式配置；当前执行环境未注入这些正式凭证，不代表 Vercel 未配置。新增面试内测还需要独立迁移、OpenAI Key 和 Worker，详见 `INTERVIEW_INTERNAL.md`。不需要再次编辑无法操作的 Codex 云环境。
+
+## 简历文件功能
+
+沿用现有 Supabase URL、公开 key、服务端 key 和限流密钥，**没有新增环境变量或 OpenAI 依赖**。首次上传自动创建 `resume-originals` 私有桶，单文件 3 MiB；采用本站鉴权代理上传/下载，不需要公开桶或浏览器 Storage 权限。3 MiB 的请求也为 Vercel 函数的请求体限制预留了空间，不应自行放大而忽略部署平台限制。
+
+部署迁移可执行 `supabase/migrations/202610310004_resume_originals.sql`，显式配置桶并增加限制性 Storage 策略；不会清理旧资料或改变原有内部 ID。新迁移已在本机真实 Storage 库验证，尚未在托管项目执行。客户端 PDF/Word 处理资源及字体随仓库部署，不依赖第三方解析服务。编辑能力与边界见 [RESUME_FILES.md](RESUME_FILES.md)。
 
 ## 验证码发送前的数据库限流故障诊断
 

@@ -3,12 +3,16 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Plus, Save, Printer, ArrowUp, ArrowDown, Trash2, Copy, FileText } from 'lucide-react';
 import { useDraftStorage } from '@/components/drafts';
+import { OriginalResumeEditor, ResumeUpload, downloadBytes } from '@/components/resume-original';
+import type { OriginalResume } from '@/lib/resume-files/model';
+import { templateWord } from '@/lib/resume-files/template-word';
 import { emptyResume, type ResumeDocument } from '@/lib/resume';
 type Summary = { id: string; title: string; company: string; updated_at: string };
 export function ResumeStudio({ email }: { email: string }) {
   const router = useRouter(),
     params = useSearchParams();
   const mounted = useRef(true);
+  const [original, setOriginal] = useState<OriginalResume | null>(null);
   const [initialLoading, setInitialLoading] = useState(Boolean(params.get('id')));
   const [document, setDocument] = useState<ResumeDocument>(() => emptyResume('', email)),
     [title, setTitle] = useState('我的求职简历'),
@@ -65,6 +69,13 @@ export function ResumeStudio({ email }: { email: string }) {
       setUpdatedAt(data.resume.updated_at);
       setTitle(data.resume.title);
       setCompany(data.resume.company);
+      if (data.resume.original) {
+        setOriginal(data.resume.original);
+        setDirty(false);
+        if (syncUrl) window.history.replaceState(null, '', `/resume?id=${data.resume.id}`);
+        return;
+      }
+      setOriginal(null);
       setDocument(data.resume.document);
       setDirty(false);
       if (syncUrl) window.history.replaceState(null, '', `/resume?id=${data.resume.id}`);
@@ -199,6 +210,41 @@ export function ResumeStudio({ email }: { email: string }) {
       setBusy(false);
     }
   }
+  function newTemplate() {
+    setOriginal(null);
+    setId(undefined);
+    setUpdatedAt(undefined);
+    setTitle('我的求职简历');
+    setCompany('');
+    setDocument(emptyResume('', email));
+    setDirty(false);
+    window.history.replaceState(null, '', '/resume');
+  }
+  async function convertCopy(text: string, template: 'classic' | 'compact' | 'sidebar') {
+    if (text.length > 17000) throw new Error('原文较长，请先在原文件中精简后转换；原件不受影响。');
+    const copy = emptyResume();
+    copy.template = template;
+    copy.sections = Array.from(
+      { length: Math.max(1, Math.ceil(text.length / 4000)) },
+      (_, index) => ({
+        id: crypto.randomUUID(),
+        title: index ? '导入内容（续）' : '导入文字 · 请校对整理',
+        body: text.slice(index * 4000, (index + 1) * 4000),
+      })
+    );
+    const data = await request('/api/resumes', 'POST', {
+      title: title.slice(0, 106) + ' · 模板副本',
+      company: '',
+      document: copy,
+    });
+    await list();
+    await load(data.resume.id);
+  }
+  function selectVersion(value: string) {
+    void load(value)
+      .then(() => list())
+      .catch((error) => setError(error.message));
+  }
   if (initialLoading)
     return (
       <main className="site-main resume-page">
@@ -209,6 +255,21 @@ export function ResumeStudio({ email }: { email: string }) {
           正在载入你的简历版本…
         </section>
       </main>
+    );
+  if (original && id && updatedAt)
+    return (
+      <OriginalResumeEditor
+        key={id}
+        entry={{ id, title, company, updated_at: updatedAt, original }}
+        items={items}
+        onSelect={selectVersion}
+        onNew={newTemplate}
+        onCopyToTemplate={convertCopy}
+        onDeleted={() => {
+          newTemplate();
+          void list();
+        }}
+      />
     );
   return (
     <main className="site-main resume-page">
@@ -242,6 +303,19 @@ export function ResumeStudio({ email }: { email: string }) {
             <Printer size={16} />
             打印 / 导出 PDF
           </button>
+          <button
+            className="button secondary"
+            disabled={busy}
+            onClick={() =>
+              downloadBytes(
+                templateWord(document),
+                `${title}.docx`,
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+              )
+            }
+          >
+            导出 Word
+          </button>
           <button className="button primary" disabled={busy} onClick={() => void save()}>
             <Save size={16} />
             保存简历
@@ -256,11 +330,33 @@ export function ResumeStudio({ email }: { email: string }) {
           </button>
         </div>
       </div>
-      <div className="site-notice">
-        当前支持文字分块编辑、A4 预览与 PDF 导出。DOCX / 文字型 PDF 文件导入和保真编辑正在开发中。
-        <br />
-        未保存的修改会在当前标签页临时保留；保存到账号后可跨设备继续编辑。
-      </div>
+      <ResumeUpload onUploaded={selectVersion} />
+      <section className="resume-template-picker" aria-label="选择简历模板">
+        <div>
+          <h2>选择站内模板</h2>
+          <p>新建简历可选版式；上传原件后可在原版编辑器中保留原模板。</p>
+        </div>
+        <div role="group" aria-label="简历模板">
+          {(
+            [
+              { key: 'classic', label: '经典单栏', description: '清晰分区，适合通用求职' },
+              { key: 'compact', label: '紧凑履历', description: '更紧凑的字体与段落间距' },
+              { key: 'sidebar', label: '侧栏信息', description: '个人信息侧栏与经历正文' },
+            ] as const
+          ).map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              aria-pressed={(document.template || 'classic') === item.key}
+              onClick={() => change({ ...document, template: item.key })}
+            >
+              <span className={`resume-template-mini ${item.key}`} aria-hidden="true" />
+              <strong>{item.label}</strong>
+              <small>{item.description}</small>
+            </button>
+          ))}
+        </div>
+      </section>
       <fieldset className="resume-interactive" disabled={busy}>
         <div className="resume-controls">
           <label>
@@ -330,8 +426,8 @@ export function ResumeStudio({ email }: { email: string }) {
           )}
           {dirty && <p className="muted">有未保存的修改。保存后可在其他设备登录继续编辑。</p>}
           <p className="muted">
-            当前支持手动分块编辑与浏览器 PDF 导出。自动文件解析、AI
-            改写尚未开放；可将现有简历文字粘贴到对应模块。
+            站内模板支持分块编辑、Word 和 PDF 导出。已有简历可通过上方上传入口在原版编辑器中修改；AI
+            改写尚未开放。
           </p>
         </div>
         <div className="resume-workbench">
@@ -447,7 +543,7 @@ export function ResumeStudio({ email }: { email: string }) {
             <div className="resume-preview-label">
               <FileText size={16} /> A4 排版预览
             </div>
-            <article className="resume-preview">
+            <article className={`resume-preview theme-${document.template || 'classic'}`}>
               <header>
                 <h2>{document.basics.name || '你的姓名'}</h2>
                 {document.basics.headline && (
@@ -460,17 +556,19 @@ export function ResumeStudio({ email }: { email: string }) {
                 </p>
                 {document.basics.links && <p className="resume-contact">{document.basics.links}</p>}
               </header>
-              {document.sections
-                .filter((s) => s.body.trim())
-                .map((section) => (
-                  <section key={section.id}>
-                    <h3>{section.title}</h3>
-                    <p>{section.body}</p>
-                  </section>
-                ))}
-              {document.sections.every((s) => !s.body.trim()) && (
-                <p className="resume-preview-empty">从左侧填写经历，这里会同步展示排版。</p>
-              )}
+              <div className="resume-preview-body">
+                {document.sections
+                  .filter((s) => s.body.trim())
+                  .map((section) => (
+                    <section key={section.id}>
+                      <h3>{section.title}</h3>
+                      <p>{section.body}</p>
+                    </section>
+                  ))}
+                {document.sections.every((s) => !s.body.trim()) && (
+                  <p className="resume-preview-empty">从左侧填写经历，这里会同步展示排版。</p>
+                )}
+              </div>
             </article>
           </section>
         </div>

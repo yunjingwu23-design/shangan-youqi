@@ -15,21 +15,21 @@
 
 ## 旧页面与新页面映射
 
-| 旧页面                      | 新位置与兼容规则                                                               | 复用组件 / 数据                       |
-| --------------------------- | ------------------------------------------------------------------------------ | ------------------------------------- |
-| `/`                         | 重做首页布局，地址不变                                                         | Logo、岗位目录、真实用户投递记录      |
-| `/jobs`、`/jobs/[id]`       | 地址不变，归入找岗位                                                           | JobsExplorer、JobActions、原岗位 API  |
-| `/workspace`                | 地址不变，默认横向表格                                                         | Workspace、原 CRUD 与账号逻辑         |
-| 工作台内简历切换            | 统一进入 `/resume`，旧文字稿在版本列表读取                                     | ResumeStudio、原 resume 记录          |
-| 工作台内收藏切换            | `/workspace/favorites`                                                         | Workspace 的 favorite 视图            |
-| 工作台内账号切换            | `/workspace/settings`                                                          | 原账号资料与删除机制                  |
-| `/resume?id=…`              | 地址与版本参数不变                                                             | 原简历编辑、校验、冲突保护、PDF 导出  |
-| `/interviews`               | 重定向至 `/resources`                                                          | 原面经准备指南列表                    |
-| `/interviews/[slug]`        | 重定向至 `/resources/[slug]`                                                   | 原指南正文                            |
-| `/mock`（含原 mentor 锚点） | 重定向至 `/interview-center/mock`；文字练习独立到 `/interview-center/practice` | 同一 MockPractice 按服务/练习模式显示 |
-| `/review`                   | 重定向至 `/interview-center/notes`                                             | ReviewNotebook、原笔记与练习记录      |
-| `/workspace/interviews/**`  | 继续使用原地址，导航归属面试中心                                               | 完整原录音、任务、逐字稿与报告链路    |
-| `/admin/jobs`               | 地址不变，使用独立后台布局                                                     | CatalogAdmin、岗位权限检查与发布逻辑  |
+| 旧页面                      | 新位置与兼容规则                                                               | 复用组件 / 数据                                            |
+| --------------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------- |
+| `/`                         | 重做首页布局，地址不变                                                         | Logo、岗位目录、真实用户投递记录                           |
+| `/jobs`、`/jobs/[id]`       | 地址不变，归入找岗位                                                           | JobsExplorer、JobActions、原岗位 API                       |
+| `/workspace`                | 地址不变，默认横向表格                                                         | Workspace、原 CRUD 与账号逻辑                              |
+| 工作台内简历切换            | 统一进入 `/resume`，旧文字稿在版本列表读取                                     | ResumeStudio、原 resume 记录                               |
+| 工作台内收藏切换            | `/workspace/favorites`                                                         | Workspace 的 favorite 视图                                 |
+| 工作台内账号切换            | `/workspace/settings`                                                          | 原账号资料与删除机制                                       |
+| `/resume?id=…`              | 地址与版本参数不变                                                             | 原简历编辑与冲突保护；新增原版 PDF/DOCX 文件编辑及三种模板 |
+| `/interviews`               | 重定向至 `/resources`                                                          | 原面经准备指南列表                                         |
+| `/interviews/[slug]`        | 重定向至 `/resources/[slug]`                                                   | 原指南正文                                                 |
+| `/mock`（含原 mentor 锚点） | 重定向至 `/interview-center/mock`；文字练习独立到 `/interview-center/practice` | 同一 MockPractice 按服务/练习模式显示                      |
+| `/review`                   | 重定向至 `/interview-center/notes`                                             | ReviewNotebook、原笔记与练习记录                           |
+| `/workspace/interviews/**`  | 继续使用原地址，导航归属面试中心                                               | 完整原录音、任务、逐字稿与报告链路                         |
+| `/admin/jobs`               | 地址不变，使用独立后台布局                                                     | CatalogAdmin、岗位权限检查与发布逻辑                       |
 
 其他现存 API 地址均不变。旧地址不复制功能实现，旧详情参数继续传递。`/mock?id=…` 兼容打开指定文字练习，`/review?id=…` 保留笔记 ID。简历版本删除操作移至简历编辑页，继续使用原有所有权校验的删除接口。
 
@@ -59,9 +59,9 @@
 
 ## 保留需求与状态
 
-- 现有可用：邮箱登录、横向投递表、收藏、简历分块编辑/预览/PDF 导出、公开指南、文字面试练习、手动笔记、岗位运营。
+- 现有可用：邮箱登录、横向投递表、收藏、简历分块编辑/预览/Word 与 PDF 导出、PDF/DOCX 原文件上传与原版文字编辑、公开指南、文字面试练习、手动笔记、岗位运营。简历具体格式边界见 [RESUME_FILES.md](RESUME_FILES.md)。
 - 条件开放：录音上传/异步转写/AI 复盘沿用 INTERVIEWS_ENABLED 配置；未开放时页面说明并保留主导航。
-- 待开发/运营准备：DOCX 与文字型 PDF 文件导入和保真编辑、招聘日历、自动日程提醒、准备计划、全网雷达、授权商城、真人导师预约。保留对应模块位置及需求说明，不提供伪造内容、下单或成功反馈。
+- 待开发/运营准备：完整 Office 排版编辑、扫描件 OCR、AI 简历解析/改写、招聘日历、自动日程提醒、准备计划、全网雷达、授权商城、真人导师预约。保留对应模块位置及需求说明，不提供伪造内容、下单或成功反馈。
 
 ## 验收路径
 
@@ -71,7 +71,7 @@
 
 ## 部署与验证
 
-本轮没有新增环境变量或 SQL 迁移，不需要再次配置云环境。沿用已配置的 Supabase、原账号迁移与前一轮岗位目录迁移；不重置生产数据。GitHub main 推送后由现有 Vercel 项目部署，公网地址保持 `https://shangan-youqi.vercel.app/`。本环境网络策略不允许访问 Vercel API/线上域名，因此线上 Ready 状态仍以平台实际部署为准。
+IA 重构本身没有新增环境变量或 SQL 迁移，不需要再次配置云环境。后续简历增强也沿用已有环境变量，另提供可选私有桶加固迁移，见 [RESUME_FILES.md](RESUME_FILES.md)。沿用已配置的 Supabase、原账号迁移与前一轮岗位目录迁移，不重置生产数据。GitHub main 推送后由现有 Vercel 项目部署，公网地址保持 `https://shangan-youqi.vercel.app/`。本环境网络策略不允许访问 Vercel API/线上域名，因此线上 Ready 状态仍以平台实际部署为准。
 
 验证使用本地真实 Auth、PostgreSQL、私有 Storage、Mailpit 与 Chromium。覆盖三类用户路径、桌面/手机/900px 平板布局、旧链接、草稿恢复、简历版本保存/删除、后台 JD 导入和角色隔离。搜索的个人结果只显示本人记录；只读导航前后逐条比较数据库，原记录与内部 ID 不变。测试详情见 [TESTING.md](TESTING.md)。
 

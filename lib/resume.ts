@@ -2,6 +2,7 @@ import { z } from 'zod';
 export const resumeDocumentSchema = z
   .object({
     format: z.literal('shangan-resume-v1'),
+    template: z.enum(['classic', 'compact', 'sidebar']).optional(),
     basics: z
       .object({
         name: z.string().max(60),
