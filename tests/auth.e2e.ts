@@ -48,7 +48,7 @@ test('desktop: official logo, real OTP, persisted workspace, profile, restored s
   ).toBeVisible();
   await page.reload();
   await expect(page.getByText('真实数据库持久化记录', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '账号与资料', exact: true }).click();
+  await page.getByRole('link', { name: '账号与资料', exact: true }).click();
   await page.getByLabel('昵称', { exact: true }).fill('认真准备的小岸');
   await page.getByRole('button', { name: '保存个人资料' }).click();
   await expect(page.getByRole('status')).toContainText('个人资料已保存');
@@ -64,13 +64,23 @@ test('desktop: official logo, real OTP, persisted workspace, profile, restored s
   await expect(
     restored.getByRole('button', { name: '浏览器测试 · 产品经理', exact: true })
   ).toBeVisible();
-  await restored.getByRole('button', { name: '我的收藏', exact: true }).click();
-  await expect(restored.getByRole('heading', { name: '我的收藏', exact: true })).toBeVisible();
-  await restored.getByRole('button', { name: '求职工作台', exact: true }).click();
+  await restored
+    .getByRole('navigation', { name: '我的求职模块导航' })
+    .getByRole('link', { name: '收藏岗位', exact: true })
+    .click();
+  await expect(restored.getByRole('heading', { name: '收藏岗位', exact: true })).toBeVisible();
+  await restored
+    .getByRole('navigation', { name: '我的求职模块导航' })
+    .getByRole('link', { name: '求职工作台', exact: true })
+    .click();
   await restored.getByRole('button', { name: '编辑 浏览器测试 · 产品经理' }).click();
   await restored.getByRole('combobox', { name: '状态', exact: true }).selectOption('interview');
   await restored.getByRole('button', { name: '保存记录', exact: true }).click();
-  await expect(restored.getByText('面试中', { exact: true })).toBeVisible();
+  await expect(
+    restored
+      .getByRole('region', { name: '投递记录', exact: true })
+      .getByText('面试中', { exact: true })
+  ).toBeVisible();
   await restored.screenshot({ path: 'test-results/workspace-desktop.png', fullPage: true });
   await restored.getByRole('button', { name: '退出登录', exact: true }).click();
   await expect(restored).toHaveURL('/login');

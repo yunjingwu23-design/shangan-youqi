@@ -7,14 +7,8 @@ export default async function WorkspacePage() {
   try {
     identity = await actor();
   } catch (error) {
-    if (error instanceof ApiError && error.status === 401) redirect('/login?reason=expired');
+    if (error instanceof ApiError && error.status === 401) redirect('/login?next=%2Fworkspace');
     throw error;
   }
-  return (
-    <Workspace
-      email={identity.user.email || ''}
-      userId={identity.userId}
-      interviewsEnabled={process.env.INTERVIEWS_ENABLED === 'true'}
-    />
-  );
+  return <Workspace email={identity.user.email || ''} userId={identity.userId} />;
 }

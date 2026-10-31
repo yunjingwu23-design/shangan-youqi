@@ -1,4 +1,6 @@
 import { InterviewHistory } from '@/components/interviews';
-export default function Page() {
+import { requireSiteUser } from '@/lib/site-session';
+export default async function Page() {
+  await requireSiteUser('/workspace/interviews');
   return <InterviewHistory />;
 }

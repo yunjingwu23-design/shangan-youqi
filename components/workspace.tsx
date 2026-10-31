@@ -1,39 +1,24 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { SiteLinks } from '@/components/site-navigation';
+import { clearSessionDrafts, useDraftState, useDraftStorage } from '@/components/drafts';
 import { entryPresentation } from '@/lib/entry-presentation';
-import { Brand } from '@/components/brand';
 import { type Entry, type Profile, kindLabels, statusLabels } from '@/lib/validation';
 import {
   ArrowUpRight,
-  Bookmark,
   BriefcaseBusiness,
   Check,
-  ChevronRight,
-  FileText,
-  LayoutDashboard,
   LoaderCircle,
-  LogOut,
-  MessageSquareText,
   Plus,
   RefreshCw,
   Search,
-  Settings2,
   ShieldCheck,
   Trash2,
   X,
   Pencil,
 } from 'lucide-react';
 type Kind = Entry['kind'];
-const kinds: Kind[] = ['application', 'resume', 'favorite', 'interview_review'];
-const icons = {
-  application: BriefcaseBusiness,
-  resume: FileText,
-  favorite: Bookmark,
-  interview_review: MessageSquareText,
-};
 const emptyDraft = {
   title: '',
   company: '',
@@ -44,15 +29,19 @@ const emptyDraft = {
 export function Workspace({
   email,
   userId,
-  interviewsEnabled = false,
+  initialKind = 'application',
+  initialSettings = false,
 }: {
   email: string;
   userId: string;
-  interviewsEnabled?: boolean;
+  initialKind?: Kind;
+  initialSettings?: boolean;
 }) {
-  const router = useRouter();
-  const [kind, setKind] = useState<Kind>('application');
-  const [settings, setSettings] = useState(false);
+  const router = useRouter(),
+    params = useSearchParams();
+  const profileDraft = useDraftStorage<Profile>('profile');
+  const kind = initialKind;
+  const [settings] = useState(initialSettings);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [total, setTotal] = useState(0);
@@ -62,8 +51,11 @@ export function Workspace({
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [search, setSearch] = useState('');
-  const [editing, setEditing] = useState<Entry | 'new' | null>(null);
-  const [draft, setDraft] = useState(emptyDraft);
+  const [editing, setEditing] = useDraftState<Entry | 'new' | null>(
+    `workspace:${kind}:editing`,
+    null
+  );
+  const [draft, setDraft] = useDraftState(`workspace:${kind}:fields`, emptyDraft);
   const [destruction, setDestruction] = useState<'data' | 'account' | null>(null);
   const [confirmation, setConfirmation] = useState('');
   const [deleteEntry, setDeleteEntry] = useState<Entry | null>(null);
@@ -90,10 +82,11 @@ export function Workspace({
     try {
       const [p, records] = await Promise.all([
         request('/api/profile'),
-        request(`/api/entries?kind=${kind}`),
+        request(`/api/entries?kind=${kind}${kind === 'favorite' ? '&collection=jobs' : ''}`),
       ]);
       if (sequence !== loadSequence.current) return;
-      setProfile(p.profile);
+      const pendingProfile = settings ? profileDraft.read() : null;
+      setProfile(pendingProfile?.user_id === userId ? pendingProfile : p.profile);
       setEntries(records.entries);
       setTotal(records.total);
       setNextOffset(records.nextOffset);
@@ -109,6 +102,25 @@ export function Workspace({
   useEffect(() => {
     void load();
   }, [load]);
+  const openedEntry = useRef<string | null>(null);
+  useEffect(() => {
+    const id = params.get('entry');
+    if (!id || openedEntry.current === id || editing) return;
+    openedEntry.current = id;
+    let current = true;
+    void request(`/api/entries?kind=${kind}&id=${encodeURIComponent(id)}`)
+      .then((result) => {
+        if (!current) return;
+        if (result.entries[0]) openEditor(result.entries[0]);
+        else setError('记录不存在或已被删除。');
+      })
+      .catch((error) => {
+        if (current) setError(error.message);
+      });
+    return () => {
+      current = false;
+    };
+  }, [params, kind]);
   // Refresh on device/tab return; explicit refresh also available. Never overwrite a form in progress.
   useEffect(() => {
     function refresh() {
@@ -166,16 +178,10 @@ export function Workspace({
         editing === 'new' ? { ...draft, kind } : { ...draft, id: (editing as Entry).id }
       );
       setEditing(null);
+      if (params.has('entry')) window.history.replaceState(null, '', '/workspace');
       await load();
       setNotice('记录已保存到云端。');
     });
-  }
-  function selectKind(value: Kind) {
-    setKind(value);
-    setSettings(false);
-    setSearch('');
-    setNotice('');
-    setError('');
   }
   const visible = entries.filter((entry) =>
     `${entry.title} ${entry.company} ${entry.content}`.toLowerCase().includes(search.toLowerCase())
@@ -183,81 +189,24 @@ export function Workspace({
   const name = profile?.full_name || '求职者';
   return (
     <div className="workspace-shell">
-      <aside className="sidebar">
-        <Brand />
-        <div className="workspace-site-shortcuts">
-          <Link href="/">返回首页</Link>
-          <Link href="/jobs">岗位广场</Link>
-          <Link href="/resume">简历编辑</Link>
-          <Link href="/mock">模拟面试</Link>
-        </div>
-        <div className="sidebar-heading">我的空间</div>
-        <button
-          className={`nav-item ${!settings && kind === 'application' ? 'active' : ''}`}
-          onClick={() => selectKind('application')}
-        >
-          <LayoutDashboard size={18} />
-          求职工作台
-          <ChevronRight size={14} />
-        </button>
-        {kinds.slice(1).map((value) => {
-          const Icon = icons[value];
-          return (
-            <button
-              key={value}
-              className={`nav-item ${!settings && kind === value ? 'active' : ''}`}
-              onClick={() => selectKind(value)}
-            >
-              <Icon size={18} />
-              {kindLabels[value]}
-              {['resume', 'interview_review'].includes(value) && (
-                <span className="nav-label">基础版</span>
-              )}
-            </button>
-          );
-        })}
-        {interviewsEnabled && (
-          <Link className="nav-item" href="/workspace/interviews">
-            <MessageSquareText size={18} />
-            AI 面试复盘<span className="nav-label">内测</span>
-          </Link>
-        )}
-        <div className="sidebar-bottom">
-          <div className="private-space">
-            <ShieldCheck size={18} />
-            <div>
-              你的私人空间<small>个人数据默认仅自己可见</small>
-            </div>
-          </div>
-          <button
-            className={`nav-item ${settings ? 'active' : ''}`}
-            onClick={() => {
-              setSettings(true);
-              setNotice('');
-            }}
-          >
-            <Settings2 size={18} />
-            账号与资料
-          </button>
-          <button
-            className="nav-item"
-            disabled={busy}
-            onClick={() =>
-              operate(async () => {
-                await request('/api/auth/logout', 'POST', {});
-                router.replace('/login');
-                router.refresh();
-              })
-            }
-          >
-            <LogOut size={18} />
-            退出登录
-          </button>
-        </div>
-      </aside>
       <div className="workspace-main">
         <header className="workspace-header">
-          <SiteLinks compact />
+          <div className="ia-workspace-account">
+            <Link href="/workspace/settings">账号与资料</Link>
+            <button
+              disabled={busy}
+              onClick={() =>
+                operate(async () => {
+                  await request('/api/auth/logout', 'POST', {});
+                  clearSessionDrafts();
+                  router.replace('/login');
+                  router.refresh();
+                })
+              }
+            >
+              退出登录
+            </button>
+          </div>
           <div className="user-chip">
             <span className="avatar">{name.charAt(0)}</span>
             <span>{name}</span>
@@ -272,7 +221,9 @@ export function Workspace({
                   ? '账号与个人资料'
                   : kind === 'application'
                     ? `${name}，今天也向前一步。`
-                    : kindLabels[kind]}
+                    : kind === 'favorite'
+                      ? '收藏岗位'
+                      : kindLabels[kind]}
               </h1>
               <p>
                 {settings
@@ -328,6 +279,7 @@ export function Workspace({
                           bio: profile.bio,
                         });
                         setProfile(result.profile);
+                        profileDraft.clear();
                         setNotice('个人资料已保存。');
                       });
                     }}
@@ -342,7 +294,11 @@ export function Workspace({
                       <input
                         value={profile.full_name}
                         maxLength={60}
-                        onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
+                        onChange={(e) => {
+                          const next = { ...profile, full_name: e.target.value };
+                          setProfile(next);
+                          profileDraft.write(next);
+                        }}
                         placeholder="怎么称呼你"
                       />
                     </label>
@@ -352,7 +308,11 @@ export function Workspace({
                         <input
                           value={profile.desired_role}
                           maxLength={100}
-                          onChange={(e) => setProfile({ ...profile, desired_role: e.target.value })}
+                          onChange={(e) => {
+                            const next = { ...profile, desired_role: e.target.value };
+                            setProfile(next);
+                            profileDraft.write(next);
+                          }}
                           placeholder="例如：产品经理"
                         />
                       </label>
@@ -361,7 +321,11 @@ export function Workspace({
                         <input
                           value={profile.city}
                           maxLength={60}
-                          onChange={(e) => setProfile({ ...profile, city: e.target.value })}
+                          onChange={(e) => {
+                            const next = { ...profile, city: e.target.value };
+                            setProfile(next);
+                            profileDraft.write(next);
+                          }}
                           placeholder="例如：上海"
                         />
                       </label>
@@ -372,7 +336,11 @@ export function Workspace({
                         value={profile.bio}
                         maxLength={1000}
                         rows={4}
-                        onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                        onChange={(e) => {
+                          const next = { ...profile, bio: e.target.value };
+                          setProfile(next);
+                          profileDraft.write(next);
+                        }}
                         placeholder="关于你的一点介绍（选填）"
                       />
                     </label>
@@ -576,7 +544,7 @@ export function Workspace({
                         onClick={() =>
                           operate(async () => {
                             const result = await request(
-                              `/api/entries?kind=${kind}&offset=${nextOffset}`
+                              `/api/entries?kind=${kind}&offset=${nextOffset}${kind === 'favorite' ? '&collection=jobs' : ''}`
                             );
                             setEntries((previous) => [...previous, ...result.entries]);
                             setNextOffset(result.nextOffset);
@@ -747,6 +715,7 @@ export function Workspace({
                   'DELETE',
                   { confirmation }
                 );
+                clearSessionDrafts();
                 if (destruction === 'account') {
                   router.replace('/login');
                   router.refresh();

@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useDraftState, useDraftStorage, useFileDraft } from '@/components/drafts';
 import {
   ArrowRight,
   Upload,
@@ -212,26 +213,25 @@ function uploadFile(
 export function InterviewUpload() {
   const router = useRouter();
   const [jobs, setJobs] = useState<{ id: string; title: string }[]>([]),
-    [jobId, setJobId] = useState('new'),
-    [jobTitle, setJobTitle] = useState(''),
-    [company, setCompany] = useState('');
-  const [title, setTitle] = useState(''),
-    [round, setRound] = useState('第一轮'),
-    [file, setFile] = useState<File | null>(null),
+    [jobId, setJobId] = useDraftState('upload:jobId', 'new'),
+    [jobTitle, setJobTitle] = useDraftState('upload:jobTitle', ''),
+    [company, setCompany] = useDraftState('upload:company', '');
+  const [title, setTitle] = useDraftState('upload:title', ''),
+    [round, setRound] = useDraftState('upload:round', '第一轮'),
+    [file, setFile] = useFileDraft('interview:audio'),
     [consent, setConsent] = useState(false),
     [contextConsent, setContextConsent] = useState(false),
-    [jd, setJd] = useState(''),
-    [resume, setResume] = useState('');
+    [jd, setJd] = useDraftState('upload:jd', ''),
+    [resume, setResume] = useDraftState('upload:resume', '');
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
     [progress, setProgress] = useState(0),
-    [createdId, setCreatedId] = useState<string | null>(null);
+    [createdId, setCreatedId] = useDraftState<string | null>('upload:created', null);
   const uploadAbort = useRef<AbortController | null>(null);
   useEffect(() => {
     request('/api/entries?kind=application')
       .then((data) => {
         setJobs(data.entries);
-        if (data.entries.length) setJobId(data.entries[0].id);
       })
       .catch((e) => setError(errorText(e)));
     return () => uploadAbort.current?.abort();
@@ -303,6 +303,8 @@ export function InterviewUpload() {
         uploadAbort.current.signal
       );
       await request(`/api/interviews/${id}/transcribe`, 'POST', {});
+      setFile(null);
+      setCreatedId(null);
       router.push(`/workspace/interviews/${id}/progress`);
     } catch (e) {
       setError(errorText(e));
@@ -318,6 +320,9 @@ export function InterviewUpload() {
       <p className="eyebrow">START WITH THE REAL CONVERSATION</p>
       <h1>上传面试录音</h1>
       <p className="muted">先还原对话，再认真复盘。生成报告前，你可以校对每一段文字。</p>
+      <p className="ia-draft-note">
+        文字会在当前标签页临时保留。站内导航返回后可继续使用所选文件；刷新或关闭标签页后需要重新选择录音。授权勾选需要重新确认。
+      </p>
       <form className="interview-card interview-form" onSubmit={submit}>
         <fieldset disabled={busy || Boolean(createdId)}>
           <label>
@@ -380,7 +385,7 @@ export function InterviewUpload() {
             <input
               type="file"
               accept=".mp3,.m4a,.wav,.mp4,.webm,.ogg"
-              required
+              required={!file}
               onChange={(e) => {
                 setFile(e.target.files?.[0] || null);
                 setProgress(0);
@@ -493,6 +498,11 @@ export function InterviewDetailPage({ id, view }: { id: string; view: string }) 
     [report, setReport] = useState<InterviewReport | null>(null),
     [editing, setEditing] = useState(false),
     [audio, setAudio] = useState('');
+  const transcriptDraft = useDraftStorage<{ segments: Segment[]; version: number }>(
+    `transcript:${id}`
+  );
+  const reportDraft = useDraftStorage<{ body: InterviewReport; revision: number }>(`report:${id}`);
+  const restoredRevision = useRef<number | null>(null);
   const dirty = useRef(false),
     reportDirty = useRef(false);
   const load = useCallback(async () => {
@@ -500,10 +510,25 @@ export function InterviewDetailPage({ id, view }: { id: string; view: string }) 
       const result: InterviewDetail = await request(`/api/interviews/${id}`);
       setData(result);
       if (!dirty.current) {
-        setSegments(result.transcript?.segments || []);
-        setVersion(result.transcript?.version || 0);
+        const pending = transcriptDraft.read();
+        if (pending && Array.isArray(pending.segments) && typeof pending.version === 'number') {
+          setSegments(pending.segments);
+          setVersion(pending.version);
+          dirty.current = true;
+        } else {
+          setSegments(result.transcript?.segments || []);
+          setVersion(result.transcript?.version || 0);
+        }
       }
-      if (!reportDirty.current) setReport(result.reports[0]?.body || null);
+      if (!reportDirty.current) {
+        const pending = reportDraft.read();
+        if (pending?.body) {
+          setReport(pending.body);
+          setEditing(true);
+          reportDirty.current = true;
+          restoredRevision.current = pending.revision;
+        } else setReport(result.reports[0]?.body || null);
+      }
       setError('');
     } catch (e) {
       setError(errorText(e));
@@ -512,6 +537,16 @@ export function InterviewDetailPage({ id, view }: { id: string; view: string }) 
   useEffect(() => {
     void load();
   }, [load]);
+  useEffect(() => {
+    if (dirty.current) transcriptDraft.write({ segments, version });
+  }, [segments, version]);
+  useEffect(() => {
+    if (reportDirty.current && report)
+      reportDraft.write({
+        body: report,
+        revision: restoredRevision.current || data?.reports[0]?.revision || 1,
+      });
+  }, [report]);
   const active = Boolean(
     data && ['queued', 'transcribing', 'analyzing'].includes(data.interview.status)
   );
@@ -535,6 +570,7 @@ export function InterviewDetailPage({ id, view }: { id: string; view: string }) 
   async function saveTranscript() {
     await request(`/api/interviews/${id}/transcript`, 'PUT', { version, segments });
     dirty.current = false;
+    transcriptDraft.clear();
     await load();
     setConfirmed(false);
     setNotice('校对稿已保存为新版本。');
@@ -551,6 +587,7 @@ export function InterviewDetailPage({ id, view }: { id: string; view: string }) 
       await request(`/api/interviews/${id}/transcript`, 'PUT', { version, segments });
       currentVersion++;
       dirty.current = false;
+      transcriptDraft.clear();
     }
     await request(`/api/interviews/${id}/report`, 'POST', {
       version: currentVersion,
@@ -828,7 +865,11 @@ export function InterviewDetailPage({ id, view }: { id: string; view: string }) 
                   className="button secondary"
                   disabled={active || busy}
                   onClick={() => {
-                    if (editing) setReport(data.reports[0]?.body || null);
+                    if (editing) {
+                      setReport(data.reports[0]?.body || null);
+                      reportDraft.clear();
+                      restoredRevision.current = null;
+                    }
                     setEditing(!editing);
                     reportDirty.current = !editing;
                   }}
@@ -951,10 +992,12 @@ export function InterviewDetailPage({ id, view }: { id: string; view: string }) 
                     onClick={() =>
                       void operate(async () => {
                         await request(`/api/interviews/${id}/report`, 'PUT', {
-                          revision: latest.revision,
+                          revision: restoredRevision.current || latest.revision,
                           body: report,
                         });
                         reportDirty.current = false;
+                        reportDraft.clear();
+                        restoredRevision.current = null;
                         setEditing(false);
                         await load();
                         setNotice('人工编辑已保存为新报告版本。');
@@ -975,6 +1018,8 @@ export function InterviewDetailPage({ id, view }: { id: string; view: string }) 
                       void operate(async () => {
                         await request(`/api/interviews/${id}/report`, 'DELETE', {});
                         reportDirty.current = false;
+                        reportDraft.clear();
+                        restoredRevision.current = null;
                         await load();
                       });
                   }}

@@ -16,12 +16,24 @@ export function JobsExplorer({
   available: boolean;
 }) {
   const params = useSearchParams();
-  const [q, setQ] = useState(params.get('q') || ''),
-    [type, setType] = useState(params.get('type') || ''),
-    [mode, setMode] = useState(params.get('mode') || 'fuzzy'),
-    [city, setCity] = useState(''),
-    [industry, setIndustry] = useState(''),
-    [cohort, setCohort] = useState('');
+  const q = params.get('q') || '',
+    type = params.get('type') || '',
+    mode = params.get('mode') || 'fuzzy',
+    city = params.get('city') || '',
+    industry = params.get('industry') || '',
+    cohort = params.get('cohort') || '';
+  function setFilter(key: string, value: string) {
+    const next = new URLSearchParams(params);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    window.history.replaceState(null, '', '/jobs' + (next.size ? '?' + next.toString() : ''));
+  }
+  const setQ = (value: string) => setFilter('q', value),
+    setType = (value: string) => setFilter('type', value),
+    setMode = (value: string) => setFilter('mode', value),
+    setCity = (value: string) => setFilter('city', value),
+    setIndustry = (value: string) => setFilter('industry', value),
+    setCohort = (value: string) => setFilter('cohort', value);
   const found = useMemo(
     () => filterJobs(jobs, { q, type, mode, city, industry, cohort }),
     [jobs, q, type, mode, city, industry, cohort]
@@ -30,7 +42,7 @@ export function JobsExplorer({
     <main className="site-main">
       <div className="site-page-title">
         <p className="site-eyebrow">FIND YOUR NEXT OPPORTUNITY</p>
-        <h1>岗位广场</h1>
+        <h1>找岗位</h1>
         <p>把适合自己的机会，认真筛选出来。</p>
       </div>
       {preview && (
@@ -54,19 +66,11 @@ export function JobsExplorer({
             <option value="exact">精准搜索</option>
           </select>
         </div>
-        <div className="job-type-tabs" role="group" aria-label="招聘类型">
-          {[['', '全部类型'], ...Object.entries(jobTypes)].map(([key, label]) => (
-            <button
-              key={key}
-              type="button"
-              aria-pressed={type === key}
-              className={type === key ? 'active' : ''}
-              onClick={() => setType(key)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        {type === 'conversion_internship' && (
+          <p className="site-notice">
+            转正实习需明确标注有留用可能，正式岗位详情会展示招聘方原文依据。留用仍以实际考核与安排为准。
+          </p>
+        )}
         <div className="job-selects">
           {[
             { label: '城市', value: city, set: setCity, field: 'city' },
@@ -139,11 +143,7 @@ export function JobsExplorer({
           <button
             className="button secondary"
             onClick={() => {
-              setQ('');
-              setType('');
-              setCity('');
-              setIndustry('');
-              setCohort('');
+              window.history.replaceState(null, '', '/jobs');
             }}
           >
             清除筛选

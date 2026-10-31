@@ -3,6 +3,8 @@ export function entryPresentation(entry: Entry): { summary: string; editor: stri
   try {
     const value = JSON.parse(entry.content);
     if (!value || typeof value !== 'object') return { summary: entry.content, editor: null };
+    if (entry.kind === 'favorite' && value.format === 'shangan-resource-v1')
+      return { summary: '已保存的免费面经与指南', editor: '/resources/mine' };
     if (entry.kind === 'resume' && value.format === 'shangan-resume-v1')
       return {
         summary: `排版简历${typeof value.basics?.headline === 'string' && value.basics.headline ? ' · ' + value.basics.headline : ''}`,
@@ -11,12 +13,12 @@ export function entryPresentation(entry: Entry): { summary: string; editor: stri
     if (entry.kind === 'interview_review' && value.format === 'shangan-text-mock-v1')
       return {
         summary: `文字面试练习 · ${Array.isArray(value.answers) ? value.answers.filter((v: unknown) => typeof v === 'string' && v.trim()).length : 0} 道题已作答`,
-        editor: '/mock',
+        editor: `/interview-center/practice?id=${entry.id}`,
       };
     if (entry.kind === 'interview_review' && value.format === 'shangan-mock-interest-v1')
       return {
         summary: `Mock 服务意向（未确认预约） · ${typeof value.availability === 'string' ? value.availability : ''}`,
-        editor: '/mock#mentor',
+        editor: '/interview-center/mock',
       };
     if (entry.kind === 'interview_review' && value.format === 'shangan-manual-review-v1')
       return {
@@ -26,7 +28,7 @@ export function entryPresentation(entry: Entry): { summary: string; editor: stri
             : typeof value.questions === 'string'
               ? value.questions
               : '手动复盘笔记',
-        editor: '/review',
+        editor: `/interview-center/notes?id=${entry.id}`,
       };
   } catch {
     /* Older plain-text drafts continue to use the existing editor. */

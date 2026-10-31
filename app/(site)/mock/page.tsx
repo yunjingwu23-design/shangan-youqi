@@ -1,5 +1,11 @@
-import { siteSession } from '@/lib/site-session';
-import { MockPractice } from '@/components/preparation';
-export default async function MockPage() {
-  return <MockPractice signedIn={Boolean(await siteSession())} />;
+import { permanentRedirect } from 'next/navigation';
+export default async function LegacyPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ id?: string }>;
+}) {
+  const { id } = await searchParams;
+  permanentRedirect(
+    id ? '/interview-center/practice?id=' + encodeURIComponent(id) : '/interview-center/mock'
+  );
 }

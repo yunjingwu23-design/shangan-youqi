@@ -1,7 +1,8 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useDraftState, useDraftStorage } from '@/components/drafts';
 import { ArrowRight, Save, Play, Check, Headphones } from 'lucide-react';
 import { preparationPayload, practiceTracks, type PracticeTrack } from '@/lib/preparation';
 import type { Entry } from '@/lib/validation';
@@ -19,25 +20,47 @@ async function call(path: string, method = 'GET', body?: unknown) {
     );
   return data;
 }
-export function MockPractice({ signedIn }: { signedIn: boolean }) {
-  const [track, setTrack] = useState<PracticeTrack>('product'),
-    [started, setStarted] = useState(false),
-    [index, setIndex] = useState(0),
-    [answers, setAnswers] = useState<string[]>(['', '', '', '', '']),
-    [notes, setNotes] = useState(''),
-    [seconds, setSeconds] = useState(0),
-    [paused, setPaused] = useState(false),
-    [savedId, setSavedId] = useState<string | undefined>(),
+export function MockPractice({
+  signedIn,
+  mode = 'practice',
+}: {
+  signedIn: boolean;
+  mode?: 'practice' | 'service';
+}) {
+  const [track, setTrack] = useDraftState<PracticeTrack>('practice:track', 'product'),
+    [started, setStarted] = useDraftState('practice:started', false),
+    [index, setIndex] = useDraftState('practice:index', 0),
+    [answers, setAnswers] = useDraftState<string[]>('practice:answers', ['', '', '', '', '']),
+    [notes, setNotes] = useDraftState('practice:notes', ''),
+    [seconds, setSeconds] = useDraftState('practice:seconds', 0),
+    [paused, setPaused] = useDraftState('practice:paused', false),
+    [savedId, setSavedId] = useDraftState<string | undefined>('practice:id', undefined),
     [history, setHistory] = useState<Entry[]>([]),
     [error, setError] = useState(''),
     [notice, setNotice] = useState(''),
     [busy, setBusy] = useState(false),
-    [intent, setIntent] = useState({ direction: '互联网 / 产品', availability: '', note: '' });
-  const router = useRouter();
+    [intent, setIntent] = useDraftState('mock:intent', {
+      direction: '互联网 / 产品',
+      availability: '',
+      note: '',
+    });
+  const router = useRouter(),
+    params = useSearchParams();
+  const practiceIdentity = useDraftStorage<string>('practice:id');
   const questions = practiceTracks[track].questions;
   async function load() {
     if (!signedIn) return;
     const data = await call('/api/entries?kind=interview_review');
+    const requested = params.get('id');
+    if (mode === 'practice' && requested) {
+      const target =
+        data.entries.find((entry: Entry) => entry.id === requested) ||
+        (await call('/api/entries?kind=interview_review&id=' + encodeURIComponent(requested)))
+          .entries[0];
+      if (!target || preparationPayload(target.content)?.format !== 'shangan-text-mock-v1')
+        throw new Error('练习记录不存在或已删除。');
+      if (practiceIdentity.read() !== requested) openPractice(target);
+    }
     setHistory(
       data.entries.filter(
         (entry: Entry) => preparationPayload(entry.content)?.format === 'shangan-text-mock-v1'
@@ -46,12 +69,33 @@ export function MockPractice({ signedIn }: { signedIn: boolean }) {
   }
   useEffect(() => {
     void load().catch((e) => setError(e.message));
-  }, [signedIn]);
+  }, [signedIn, params.get('id'), mode]);
   useEffect(() => {
-    if (!started || paused) return;
+    if (mode !== 'practice' || !started || paused) return;
     const timer = setInterval(() => setSeconds((value) => value + 1), 1000);
     return () => clearInterval(timer);
-  }, [started, paused]);
+  }, [started, paused, mode]);
+  function openPractice(entry: Entry) {
+    const saved = preparationPayload(entry.content);
+    if (!saved || typeof saved.track !== 'string' || !Object.hasOwn(practiceTracks, saved.track))
+      return;
+    setTrack(saved.track);
+    setAnswers(
+      Array.isArray(saved.answers) &&
+        saved.answers.length === 5 &&
+        saved.answers.every((v: unknown) => typeof v === 'string')
+        ? saved.answers
+        : ['', '', '', '', '']
+    );
+    setNotes(typeof saved.notes === 'string' ? saved.notes : '');
+    setSeconds(Number(saved.seconds) || 0);
+    setSavedId(entry.id);
+    setStarted(true);
+    setPaused(true);
+    setIndex(0);
+    setNotice('已载入保存的文字练习。');
+    window.history.replaceState(null, '', '/interview-center/practice?id=' + entry.id);
+  }
   async function save() {
     setBusy(true);
     setError('');
@@ -70,6 +114,7 @@ export function MockPractice({ signedIn }: { signedIn: boolean }) {
         content,
       });
       setSavedId(data.entry.id);
+      window.history.replaceState(null, '', '/interview-center/practice?id=' + data.entry.id);
       setNotice('练习回答已保存到个人工作台。');
       await load();
     } catch (e) {
@@ -79,245 +124,251 @@ export function MockPractice({ signedIn }: { signedIn: boolean }) {
     }
   }
   return (
-    <main className="site-main">
+    <main className={`site-main ${mode === 'service' ? 'ia-mock-service' : 'ia-mock-practice'}`}>
       <div className="site-page-title">
         <p className="site-eyebrow">PRACTICE WITH PURPOSE</p>
-        <h1>模拟面试与表达练习</h1>
+        <h1>{mode === 'service' ? '真人 Mock Interview' : '文字面试练习'}</h1>
         <p>先把真实经历说清楚，再为下一次对话多做一点准备。</p>
+        <p className="ia-draft-note">
+          未保存的文字会在当前标签页临时保留；需要点击保存才会同步到账号。
+        </p>
       </div>
       <div className="preparation-grid">
-        <section className="site-card mock-practice">
-          <div className="site-section-title">
-            <div>
-              <span className="job-badge">自主文字练习</span>
-              <h2>{started ? '专注一次真实的回答' : '给自己一次完整作答的机会'}</h2>
+        {mode === 'practice' && (
+          <section className="site-card mock-practice">
+            <div className="site-section-title">
+              <div>
+                <span className="job-badge">自主文字练习</span>
+                <h2>{started ? '专注一次真实的回答' : '给自己一次完整作答的机会'}</h2>
+              </div>
+              {started && (
+                <span className="mock-timer">
+                  {String(Math.floor(seconds / 60)).padStart(2, '0')}:
+                  {String(seconds % 60).padStart(2, '0')}
+                </span>
+              )}
             </div>
-            {started && (
-              <span className="mock-timer">
-                {String(Math.floor(seconds / 60)).padStart(2, '0')}:
-                {String(seconds % 60).padStart(2, '0')}
-              </span>
-            )}
-          </div>
-          <p className="muted">题目是通用练习提示，不是企业真题，也没有自动评分或实时语音服务。</p>
-          {!signedIn ? (
-            <Link className="button primary" href="/login?next=%2Fmock">
-              登录并开始练习
-              <ArrowRight size={16} />
-            </Link>
-          ) : !started ? (
-            <>
-              <label>
-                练习方向
-                <select value={track} onChange={(e) => setTrack(e.target.value as PracticeTrack)}>
-                  {Object.entries(practiceTracks).map(([key, value]) => (
-                    <option key={key} value={key}>
-                      {value.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <p>共 5 个问题，按自己的节奏作答。回答会在你点击保存后写入个人账号。</p>
-              <button
-                className="button primary"
-                onClick={() => {
-                  setStarted(true);
-                  setPaused(false);
-                  setIndex(0);
-                  setAnswers(['', '', '', '', '']);
-                  setNotes('');
-                  setSeconds(0);
-                  setSavedId(undefined);
-                  setNotice('');
-                }}
-              >
-                <Play size={16} />
-                开始文字模拟
-              </button>
-            </>
-          ) : (
-            <>
-              <div className="mock-question-count">
-                QUESTION {index + 1} / {questions.length}
-              </div>
-              <h3 className="mock-question">{questions[index]}</h3>
-              <label>
-                我的回答
-                <textarea
-                  value={answers[index]}
-                  maxLength={2000}
-                  rows={8}
-                  placeholder="写下你会如何回答，尽量保留具体事实和个人行动。"
-                  onChange={(e) =>
-                    setAnswers((old) => old.map((v, i) => (i === index ? e.target.value : v)))
-                  }
-                />
-              </label>
-              <div className="site-actions">
-                <button
-                  className="button secondary"
-                  disabled={index === 0}
-                  onClick={() => setIndex(index - 1)}
-                >
-                  上一题
-                </button>
-                <button
-                  className="button secondary"
-                  disabled={index === questions.length - 1}
-                  onClick={() => setIndex(index + 1)}
-                >
-                  下一题
-                </button>
-                <button className="site-text-link" onClick={() => setPaused(!paused)}>
-                  {paused ? '继续计时' : '暂停计时'}
-                </button>
-              </div>
-              <label className="mock-notes">
-                练习后的观察
-                <textarea
-                  value={notes}
-                  rows={3}
-                  maxLength={2000}
-                  placeholder="哪些例子需要补充？哪段回答可以更直接？"
-                  onChange={(e) => setNotes(e.target.value)}
-                />
-              </label>
-              <div className="site-actions">
-                <button className="button primary" disabled={busy} onClick={() => void save()}>
-                  <Save size={16} />
-                  保存本次练习
-                </button>
-                <button
-                  className="button secondary"
-                  onClick={() => {
-                    setPaused(true);
-                    setStarted(false);
-                  }}
-                >
-                  返回练习设置
-                </button>
-              </div>
-            </>
-          )}
-          {error && (
-            <p className="site-error" role="alert">
-              {error}
+            <p className="muted">
+              题目是通用练习提示，不是企业真题，也没有自动评分或实时语音服务。
             </p>
-          )}
-          {notice && (
-            <p className="site-success" role="status">
-              {notice}
-            </p>
-          )}
-          {history.length > 0 && (
-            <section className="practice-history">
-              <h3>我的练习记录</h3>
-              {history.map((entry) => (
+            {!signedIn ? (
+              <Link className="button primary" href="/login?next=%2Finterview-center%2Fpractice">
+                登录并开始练习
+                <ArrowRight size={16} />
+              </Link>
+            ) : !started ? (
+              <>
+                <label>
+                  练习方向
+                  <select value={track} onChange={(e) => setTrack(e.target.value as PracticeTrack)}>
+                    {Object.entries(practiceTracks).map(([key, value]) => (
+                      <option key={key} value={key}>
+                        {value.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <p>共 5 个问题，按自己的节奏作答。回答会在你点击保存后写入个人账号。</p>
                 <button
-                  key={entry.id}
-                  className="practice-history-row"
+                  className="button primary"
                   onClick={() => {
-                    const saved = preparationPayload(entry.content);
-                    if (
-                      !saved ||
-                      typeof saved.track !== 'string' ||
-                      !Object.hasOwn(practiceTracks, saved.track)
-                    )
-                      return;
-                    setTrack(saved.track);
-                    setAnswers(
-                      Array.isArray(saved.answers) &&
-                        saved.answers.length === 5 &&
-                        saved.answers.every((v: unknown) => typeof v === 'string')
-                        ? saved.answers
-                        : ['', '', '', '', '']
-                    );
-                    setNotes(typeof saved.notes === 'string' ? saved.notes : '');
-                    setSeconds(Number(saved.seconds) || 0);
-                    setSavedId(entry.id);
                     setStarted(true);
-                    setPaused(true);
+                    setPaused(false);
                     setIndex(0);
-                    setNotice('已载入保存的文字练习。');
+                    setAnswers(['', '', '', '', '']);
+                    setNotes('');
+                    setSeconds(0);
+                    setSavedId(undefined);
+                    window.history.replaceState(null, '', '/interview-center/practice');
+                    setNotice('');
                   }}
                 >
-                  {entry.title}
-                  <span>{new Date(entry.updated_at).toLocaleDateString('zh-CN')}</span>
-                  <ArrowRight size={15} />
+                  <Play size={16} />
+                  开始文字模拟
                 </button>
-              ))}
-            </section>
-          )}
-        </section>
-        <aside>
-          <section id="mentor" className="site-card">
-            <span className="job-badge">真人 Mock</span>
-            <h2>向专业人士预约一对一练习</h2>
-            <p>覆盖互联网、技术、金融、咨询与通用面试方向。</p>
-            <div className="site-notice">
-              导师资料与预约服务尚未开放，目前不展示虚构导师、不收取预约费用。
-            </div>
-            <p className="muted">可以先保存你的服务意向。意向不是已确认的预约或订单。</p>
-            <form
-              onSubmit={(event) => {
-                event.preventDefault();
-                if (!signedIn) {
-                  router.push('/login?next=%2Fmock');
-                  return;
-                }
-                setBusy(true);
-                void call('/api/entries', 'POST', {
-                  kind: 'interview_review',
-                  title: `真人 Mock 意向 · ${intent.direction}`,
-                  content: JSON.stringify({ format: 'shangan-mock-interest-v1', ...intent }),
-                })
-                  .then(() => setNotice('预约意向已保存到个人工作台，尚未确认导师或时间。'))
-                  .catch((e) => setError(e.message))
-                  .finally(() => setBusy(false));
-              }}
-            >
-              <label>
-                希望练习的方向
-                <select
-                  value={intent.direction}
-                  onChange={(e) => setIntent({ ...intent, direction: e.target.value })}
+              </>
+            ) : (
+              <>
+                <div className="mock-question-count">
+                  QUESTION {index + 1} / {questions.length}
+                </div>
+                <h3 className="mock-question">{questions[index]}</h3>
+                <label>
+                  我的回答
+                  <textarea
+                    value={answers[index]}
+                    maxLength={2000}
+                    rows={8}
+                    placeholder="写下你会如何回答，尽量保留具体事实和个人行动。"
+                    onChange={(e) =>
+                      setAnswers((old) => old.map((v, i) => (i === index ? e.target.value : v)))
+                    }
+                  />
+                </label>
+                <div className="site-actions">
+                  <button
+                    className="button secondary"
+                    disabled={index === 0}
+                    onClick={() => setIndex(index - 1)}
+                  >
+                    上一题
+                  </button>
+                  <button
+                    className="button secondary"
+                    disabled={index === questions.length - 1}
+                    onClick={() => setIndex(index + 1)}
+                  >
+                    下一题
+                  </button>
+                  <button className="site-text-link" onClick={() => setPaused(!paused)}>
+                    {paused ? '继续计时' : '暂停计时'}
+                  </button>
+                </div>
+                <label className="mock-notes">
+                  练习后的观察
+                  <textarea
+                    value={notes}
+                    rows={3}
+                    maxLength={2000}
+                    placeholder="哪些例子需要补充？哪段回答可以更直接？"
+                    onChange={(e) => setNotes(e.target.value)}
+                  />
+                </label>
+                <div className="site-actions">
+                  <button className="button primary" disabled={busy} onClick={() => void save()}>
+                    <Save size={16} />
+                    保存本次练习
+                  </button>
+                  <button
+                    className="button secondary"
+                    onClick={() => {
+                      setPaused(true);
+                      setStarted(false);
+                    }}
+                  >
+                    返回练习设置
+                  </button>
+                </div>
+              </>
+            )}
+            {error && (
+              <p className="site-error" role="alert">
+                {error}
+              </p>
+            )}
+            {notice && (
+              <p className="site-success" role="status">
+                {notice}
+              </p>
+            )}
+            {history.length > 0 && (
+              <section className="practice-history">
+                <h3>我的练习记录</h3>
+                {history.map((entry) => (
+                  <button
+                    key={entry.id}
+                    className="practice-history-row"
+                    onClick={() => openPractice(entry)}
+                  >
+                    {entry.title}
+                    <span>{new Date(entry.updated_at).toLocaleDateString('zh-CN')}</span>
+                    <ArrowRight size={15} />
+                  </button>
+                ))}
+              </section>
+            )}
+          </section>
+        )}
+        {mode === 'service' && (
+          <aside>
+            <section id="mentor" className="site-card">
+              <span className="job-badge">真人 Mock</span>
+              <h2>向专业人士预约一对一练习</h2>
+              <p>覆盖互联网、技术、金融、咨询与通用面试方向。</p>
+              <div className="site-notice">
+                导师资料与预约服务尚未开放，目前不展示虚构导师、不收取预约费用。
+              </div>
+              <p className="muted">可以先保存你的服务意向。意向不是已确认的预约或订单。</p>
+              {!signedIn ? (
+                <Link className="button primary" href="/login?next=%2Finterview-center%2Fmock">
+                  登录并保存服务意向 →
+                </Link>
+              ) : (
+                <form
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    if (!signedIn) {
+                      router.push('/login?next=%2Finterview-center%2Fmock');
+                      return;
+                    }
+                    setBusy(true);
+                    void call('/api/entries', 'POST', {
+                      kind: 'interview_review',
+                      title: `真人 Mock 意向 · ${intent.direction}`,
+                      content: JSON.stringify({ format: 'shangan-mock-interest-v1', ...intent }),
+                    })
+                      .then(() => setNotice('预约意向已保存到个人工作台，尚未确认导师或时间。'))
+                      .catch((e) => setError(e.message))
+                      .finally(() => setBusy(false));
+                  }}
                 >
-                  {Object.values(practiceTracks).map((track) => (
-                    <option key={track.label}>{track.label}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                方便的时间（选填）
-                <input
-                  value={intent.availability}
-                  maxLength={200}
-                  onChange={(e) => setIntent({ ...intent, availability: e.target.value })}
-                  placeholder="例如：周末下午"
-                />
-              </label>
-              <label>
-                希望重点练习的内容
-                <textarea
-                  value={intent.note}
-                  maxLength={2000}
-                  rows={3}
-                  onChange={(e) => setIntent({ ...intent, note: e.target.value })}
-                />
-              </label>
-              <button className="button secondary" type="submit" disabled={busy}>
-                {signedIn ? '保存预约意向' : '登录后保存意向'}
-              </button>
-            </form>
-          </section>
-          <section className="site-card">
-            <h3>面试之后，留下复盘</h3>
-            <p>把实际问答和下一步练习记下来，让每次准备都能延续。</p>
-            <Link className="site-text-link" href="/review">
-              打开复盘中心 →
-            </Link>
-          </section>
-        </aside>
+                  <label>
+                    希望练习的方向
+                    <select
+                      value={intent.direction}
+                      onChange={(e) => setIntent({ ...intent, direction: e.target.value })}
+                    >
+                      {Object.values(practiceTracks).map((track) => (
+                        <option key={track.label}>{track.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    方便的时间（选填）
+                    <input
+                      value={intent.availability}
+                      maxLength={200}
+                      onChange={(e) => setIntent({ ...intent, availability: e.target.value })}
+                      placeholder="例如：周末下午"
+                    />
+                  </label>
+                  <label>
+                    希望重点练习的内容
+                    <textarea
+                      value={intent.note}
+                      maxLength={2000}
+                      rows={3}
+                      onChange={(e) => setIntent({ ...intent, note: e.target.value })}
+                    />
+                  </label>
+                  <button className="button secondary" type="submit" disabled={busy}>
+                    {signedIn ? '保存预约意向' : '登录后保存意向'}
+                  </button>
+                </form>
+              )}
+              {error && (
+                <p className="site-error" role="alert">
+                  {error}
+                </p>
+              )}
+              {notice && (
+                <p className="site-success" role="status">
+                  {notice}
+                </p>
+              )}
+              <Link href="/interview-center/practice" className="site-text-link">
+                先做一次文字练习 →
+              </Link>
+            </section>
+            <section className="site-card">
+              <h3>面试之后，留下复盘</h3>
+              <p>把实际问答和下一步练习记下来，让每次准备都能延续。</p>
+              <Link className="site-text-link" href="/review">
+                打开复盘中心 →
+              </Link>
+            </section>
+          </aside>
+        )}
       </div>
     </main>
   );
@@ -325,29 +376,46 @@ export function MockPractice({ signedIn }: { signedIn: boolean }) {
 export function ReviewNotebook({ interviewsEnabled }: { interviewsEnabled: boolean }) {
   const [rows, setRows] = useState<Entry[]>([]),
     [jobs, setJobs] = useState<Entry[]>([]),
-    [id, setId] = useState<string | undefined>(),
-    [title, setTitle] = useState('我的面试复盘'),
-    [jobId, setJobId] = useState(''),
-    [round, setRound] = useState('一面'),
-    [date, setDate] = useState(''),
-    [questions, setQuestions] = useState(''),
-    [answers, setAnswers] = useState(''),
-    [reflection, setReflection] = useState(''),
-    [nextSteps, setNextSteps] = useState(''),
+    [id, setId] = useDraftState<string | undefined>('notes:id', undefined),
+    [title, setTitle] = useDraftState('notes:title', '我的面试复盘'),
+    [jobId, setJobId] = useDraftState('notes:jobId', ''),
+    [round, setRound] = useDraftState('notes:round', '一面'),
+    [date, setDate] = useDraftState('notes:date', ''),
+    [questions, setQuestions] = useDraftState('notes:questions', ''),
+    [answers, setAnswers] = useDraftState('notes:answers', ''),
+    [reflection, setReflection] = useDraftState('notes:reflection', ''),
+    [nextSteps, setNextSteps] = useDraftState('notes:nextSteps', ''),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
     [notice, setNotice] = useState('');
+  const params = useSearchParams();
+  const noteIdentity = useDraftStorage<string>('notes:id');
   async function load() {
     const [records, applications] = await Promise.all([
       call('/api/entries?kind=interview_review'),
       call('/api/entries?kind=application'),
     ]);
     setRows(records.entries);
+    const requested = params.get('id');
+    if (requested) {
+      const entry =
+        records.entries.find((item: Entry) => item.id === requested) ||
+        (await call('/api/entries?kind=interview_review&id=' + encodeURIComponent(requested)))
+          .entries[0];
+      if (!entry) throw new Error('笔记不存在或已被删除。');
+      if (
+        noteIdentity.read() !== requested &&
+        !['shangan-text-mock-v1', 'shangan-mock-interest-v1'].includes(
+          preparationPayload(entry.content)?.format
+        )
+      )
+        open(entry);
+    }
     setJobs(applications.entries);
   }
   useEffect(() => {
     void load().catch((e) => setError(e.message));
-  }, []);
+  }, [params.get('id')]);
   async function save(event: React.FormEvent) {
     event.preventDefault();
     setBusy(true);
@@ -372,6 +440,7 @@ export function ReviewNotebook({ interviewsEnabled }: { interviewsEnabled: boole
         content,
       });
       setId(result.entry.id);
+      window.history.replaceState(null, '', '/interview-center/notes?id=' + result.entry.id);
       setNotice('复盘笔记已保存到个人工作台。');
       await load();
     } catch (e) {
@@ -397,8 +466,11 @@ export function ReviewNotebook({ interviewsEnabled }: { interviewsEnabled: boole
     <main className="site-main">
       <div className="site-page-title">
         <p className="site-eyebrow">TURN EXPERIENCE INTO PROGRESS</p>
-        <h1>面试复盘中心</h1>
+        <h1>手动复盘笔记</h1>
         <p>先还原发生了什么，再找到下一次可以做得更好的地方。</p>
+        <p className="ia-draft-note">
+          未保存的笔记在当前标签页临时保留，保存后才会同步到其他设备。
+        </p>
       </div>
       <section className="review-ai-banner">
         <div>
@@ -428,6 +500,7 @@ export function ReviewNotebook({ interviewsEnabled }: { interviewsEnabled: boole
               className="site-text-link"
               onClick={() => {
                 setId(undefined);
+                window.history.replaceState(null, '', '/interview-center/notes');
                 setTitle('我的面试复盘');
                 setJobId('');
                 setRound('一面');
@@ -508,74 +581,11 @@ export function ReviewNotebook({ interviewsEnabled }: { interviewsEnabled: boole
             保存复盘笔记
           </button>
         </form>
-        <aside className="site-card review-history">
-          <h2>我的复盘记录</h2>
-          {!rows.length && <p className="muted">保存第一份笔记，或从模拟面试开始。</p>}
-          {rows.map((entry) => {
-            const value = preparationPayload(entry.content);
-            const practice = value?.format === 'shangan-text-mock-v1';
-            const interest = value?.format === 'shangan-mock-interest-v1';
-            return (
-              <div className="review-history-row" key={entry.id}>
-                <span className="job-badge">
-                  {practice
-                    ? '文字模拟'
-                    : value?.format === 'shangan-mock-interest-v1'
-                      ? 'Mock 意向'
-                      : '复盘笔记'}
-                </span>
-                <h3>{entry.title}</h3>
-                <small>{new Date(entry.updated_at).toLocaleString('zh-CN')}</small>
-                {practice ? (
-                  <Link className="site-text-link" href="/mock">
-                    打开模拟面试 →
-                  </Link>
-                ) : interest ? (
-                  <div>
-                    <p className="muted">
-                      方向：{typeof value.direction === 'string' ? value.direction : ''}
-                      <br />
-                      方便时间：
-                      {typeof value.availability === 'string' && value.availability
-                        ? value.availability
-                        : '待确定'}
-                      <br />
-                      练习需求：{typeof value.note === 'string' ? value.note : ''}
-                    </p>
-                    <p className="muted">仅为服务意向，尚未确认预约。</p>
-                    <Link className="site-text-link" href="/mock#mentor">
-                      返回真人 Mock 说明 →
-                    </Link>
-                  </div>
-                ) : (
-                  <button className="site-text-link" onClick={() => open(entry)}>
-                    查看 / 编辑
-                  </button>
-                )}
-                <button
-                  className="site-text-link site-danger"
-                  disabled={busy}
-                  onClick={() => {
-                    if (window.confirm('删除这条复盘记录？')) {
-                      setBusy(true);
-                      void call('/api/entries', 'DELETE', { id: entry.id })
-                        .then(() => {
-                          if (id === entry.id) setId(undefined);
-                          return load();
-                        })
-                        .catch((e) => setError(e.message))
-                        .finally(() => setBusy(false));
-                    }
-                  }}
-                >
-                  删除
-                </button>
-              </div>
-            );
-          })}
-          <Link href="/interviews" className="button secondary">
-            阅读复盘方法
-            <Check size={15} />
+        <aside className="site-card">
+          <h2>所有面试记录</h2>
+          <p>录音复盘、文字练习和笔记统一保存在我的面试历史中。</p>
+          <Link href="/interview-center/history" className="button secondary">
+            查看我的面试历史 →
           </Link>
         </aside>
       </div>

@@ -2,7 +2,7 @@
 
 主站首页、岗位目录、邮箱验证码登录、私人求职工作台、简历编辑与面试准备。技术栈：Next.js 16 / React 19 / TypeScript / Supabase Auth / PostgreSQL RLS。
 
-主站已重新接入原交付包的入口；新增基础岗位录入/发布、云端简历编辑与文字面试练习。录音转写/AI 面试复盘为独立内测功能，真实模型验收仍需 OpenAI Key。没有实时岗位爬取、简历自动解析、真人导师排期或支付。官方 Logo 原样取自用户提供的 V1.4 交付包；旧微信登录优先级以「邮箱 OTP 优先、微信即将开放」要求为准。
+主站统一为「找岗位 / 我的求职 / 面试中心 / 面经资料」四个一级模块。全站导航从根布局持续显示，具体详情、编辑、录音进度与报告页也保留导航；移动端固定四项底部入口。首页展示全站搜索、四个行动入口、精选岗位与本人近期事项。原岗位录入/发布、云端简历编辑、文字面试练习和手动复盘继续复用，旧地址兼容跳转。录音转写/AI 面试复盘为独立内测功能，真实模型验收仍需 OpenAI Key。没有实时岗位爬取、简历自动解析、真人导师排期或支付。官方 Logo 原样取自用户提供的 V1.4 交付包；旧微信登录优先级以「邮箱 OTP 优先、微信即将开放」要求为准。
 
 ## 本地启动
 
@@ -42,6 +42,7 @@ npm run dev
 - [测试步骤与实际权限结果](docs/TESTING.md)
 - [身份模型与微信后续绑定约定](docs/SECURITY.md)
 - [录音转写与 AI 复盘架构、路由、成本及内部测试部署](docs/INTERVIEW_INTERNAL.md)
+- [新的站点地图、新旧路由映射、导航与移动端方案](docs/INFORMATION_ARCHITECTURE.md)
 - [主站重新接入、功能边界、岗位目录迁移与运营权限](docs/SITE_RECONNECTION.md)
 
 ## 验证
@@ -52,6 +53,7 @@ npm run dev
 npm run typecheck
 npm test
 npm run test:integration
+npm run test:site
 npm run test:e2e
 npm run build
 ```

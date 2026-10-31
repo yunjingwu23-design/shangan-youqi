@@ -1,10 +1,8 @@
 import { redirect } from 'next/navigation';
 import { safeReturnPath } from '@/lib/navigation';
-import { SiteLinks } from '@/components/site-navigation';
 import { serverSupabase } from '@/lib/supabase/server';
 import { LoginForm } from '@/components/login-form';
-import { Brand } from '@/components/brand';
-import { ArrowUpRight, Check, Layers3, LockKeyhole, MoveUpRight } from 'lucide-react';
+import { Check, Layers3, LockKeyhole, MoveUpRight } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 export default async function LoginPage({
   searchParams,
@@ -21,14 +19,6 @@ export default async function LoginPage({
   }
   return (
     <div className="login-shell">
-      <header className="login-header">
-        <Brand />
-        <SiteLinks compact />
-        <span className="header-note">
-          每一步，都算数。
-          <ArrowUpRight size={15} />
-        </span>
-      </header>
       <main className="login-main">
         <section className="login-story" aria-labelledby="story-heading">
           <p className="eyebrow">

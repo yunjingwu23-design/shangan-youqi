@@ -11,6 +11,8 @@ export const GET = api(async (request) => {
     .min(0)
     .max(100000)
     .parse(params.get('offset') || 0);
+  const id = params.get('id') ? z.uuid().parse(params.get('id')) : null;
+  const collection = z.enum(['jobs', 'resources']).nullable().parse(params.get('collection'));
   const { db, userId } = await actor();
   let query = db
     .from('workspace_entries')
@@ -20,6 +22,12 @@ export const GET = api(async (request) => {
     .order('id')
     .range(offset, offset + 49);
   if (kind) query = query.eq('kind', kind);
+  if (id) query = query.eq('id', id);
+  if (kind === 'favorite' && collection)
+    query =
+      collection === 'resources'
+        ? query.like('content', '{"format":"shangan-resource-v1"%')
+        : query.not('content', 'like', '{"format":"shangan-resource-v1"%');
   const { data, error, count } = await query;
   databaseError(error);
   return NextResponse.json({

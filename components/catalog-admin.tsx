@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { useDraftState } from '@/components/drafts';
 import { jobTypes, type CatalogJob } from '@/lib/catalog';
 const blank = {
   company: '',
@@ -21,10 +22,10 @@ const blank = {
 };
 export function CatalogAdmin() {
   const [jobs, setJobs] = useState<CatalogJob[]>([]),
-    [draft, setDraft] = useState(blank),
-    [selected, setSelected] = useState<CatalogJob | null>(null),
-    [email, setEmail] = useState(''),
-    [aliases, setAliases] = useState(''),
+    [draft, setDraft] = useDraftState('admin:job', blank),
+    [selected, setSelected] = useDraftState<CatalogJob | null>('admin:selected', null),
+    [email, setEmail] = useDraftState('admin:contacts', ''),
+    [aliases, setAliases] = useDraftState('admin:aliases', ''),
     [reviewed, setReviewed] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
@@ -59,7 +60,9 @@ export function CatalogAdmin() {
       <div className="site-page-title">
         <p className="site-eyebrow">CATALOG OPERATIONS</p>
         <h1>岗位录入与发布</h1>
-        <p>核对来源后再发布。普通账号只能查看公开岗位。</p>
+        <p>
+          核对来源后再发布。普通账号只能查看公开岗位。未保存的文字在当前标签页临时保留，发布仍需重新确认核验。
+        </p>
       </div>
       <div className="preparation-grid">
         <form
@@ -102,6 +105,33 @@ export function CatalogAdmin() {
               新建
             </button>
           </div>
+          <label>
+            导入 JD 文本（TXT）
+            <input
+              type="file"
+              accept=".txt,text/plain"
+              onChange={async (event) => {
+                const file = event.target.files?.[0];
+                if (!file) return;
+                if (file.size > 100 * 1024 || !file.name.toLowerCase().endsWith('.txt')) {
+                  setError('请选择 100 KiB 以内的 TXT 文本。');
+                  return;
+                }
+                try {
+                  const text = (await file.text()).trim();
+                  const combined = [draft.responsibilities, text].filter(Boolean).join('\n\n');
+                  if (combined.length > 12000) {
+                    setError('合并后的 JD 超过 12000 字，请先精简文本。');
+                    return;
+                  }
+                  setDraft({ ...draft, responsibilities: combined });
+                  setNotice('JD 文本已追加到岗位职责，请核对字段并保存。');
+                } catch {
+                  setError('无法读取文件，请改用粘贴文本。');
+                }
+              }}
+            />
+          </label>
           <div className="form-two-col">
             {[
               { key: 'company', label: '公司', max: 100 },

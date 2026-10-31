@@ -15,7 +15,7 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
   return (
     <main className="site-main site-detail">
       <Link className="site-back" href="/jobs">
-        ← 返回岗位广场
+        ← 返回找岗位
       </Link>
       {job.preview && (
         <div className="site-notice">交互样品预览 · 非实时招聘，不可用于实际投递。</div>
@@ -99,13 +99,16 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
           </section>
           <section className="site-card">
             <h3>为这次机会做准备</h3>
+            <Link className="site-text-link" href="/workspace">
+              进入我的求职工作台 →
+            </Link>
             <Link className="site-text-link" href="/resume">
               编辑岗位简历 →
             </Link>
-            <Link className="site-text-link" href="/interviews">
+            <Link className="site-text-link" href="/resources">
               阅读面试准备指南 →
             </Link>
-            <Link className="site-text-link" href="/mock">
+            <Link className="site-text-link" href="/interview-center/practice">
               开始文字面试练习 →
             </Link>
           </section>

@@ -1,6 +1,9 @@
-import { requireSiteUser } from '@/lib/site-session';
-import { ReviewNotebook } from '@/components/preparation';
-export default async function ReviewPage() {
-  await requireSiteUser('/review');
-  return <ReviewNotebook interviewsEnabled={process.env.INTERVIEWS_ENABLED === 'true'} />;
+import { permanentRedirect } from 'next/navigation';
+export default async function LegacyPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ id?: string }>;
+}) {
+  const { id } = await searchParams;
+  permanentRedirect('/interview-center/notes' + (id ? '?id=' + encodeURIComponent(id) : ''));
 }

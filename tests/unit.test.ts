@@ -5,7 +5,13 @@ import {
 } from '../lib/auth-diagnostics';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { safeReturnPath } from '../lib/navigation';
+import {
+  safeReturnPath,
+  siteLinks,
+  moduleForPath,
+  activeModuleLink,
+  pageLabel,
+} from '../lib/navigation';
 import { exampleJobs, filterJobs, catalogJobSchema } from '../lib/catalog';
 import { emptyResume, readResume, resumeSaveSchema } from '../lib/resume';
 import {
@@ -226,4 +232,38 @@ test('permission diagnostics emit only fixed resource labels', () => {
     assert.equal(authLimitPermissionTarget({ message }), expected);
   }
   assert.equal(authLimitPermissionTarget(null), 'unknown');
+});
+
+test('IA has exactly four module roots and every detail workflow keeps its owning module', () => {
+  assert.deepEqual(
+    siteLinks.map((item) => item.label),
+    ['找岗位', '我的求职', '面试中心', '面经资料']
+  );
+  for (const [path, module] of [
+    ['/jobs/sample-cicc', 'jobs'],
+    ['/resume', 'career'],
+    ['/workspace/favorites', 'career'],
+    ['/workspace/interviews/record/transcript', 'interview'],
+    ['/workspace/interviews/record/report', 'interview'],
+    ['/interview-center/mock', 'interview'],
+    ['/resources/guide', 'resources'],
+  ])
+    assert.equal(moduleForPath(path), module);
+  for (const path of ['/admin', '/admin/jobs', '/jobs-internal', '/login', '/search'])
+    assert.equal(moduleForPath(path), null);
+});
+test('secondary selection follows job query parameters and nested workflows', () => {
+  assert.equal(
+    activeModuleLink('/jobs', new URLSearchParams('type=conversion_internship')),
+    '/jobs?type=conversion_internship'
+  );
+  assert.equal(activeModuleLink('/jobs', new URLSearchParams()), '/jobs');
+  assert.equal(
+    activeModuleLink('/workspace/interviews/example/transcript', new URLSearchParams()),
+    '/workspace/interviews'
+  );
+  assert.equal(activeModuleLink('/resources/guide', new URLSearchParams()), '/resources');
+  assert.equal(pageLabel('/workspace/interviews/example/report'), '复盘报告');
+  for (const path of ['/interview-center/mock', '/resources/mine', '/search?q=%E9%9D%A2%E8%AF%95'])
+    assert.equal(safeReturnPath(path), path);
 });

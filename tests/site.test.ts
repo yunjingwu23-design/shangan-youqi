@@ -207,4 +207,90 @@ test('reconnected site: published jobs, operator RLS and private resume persiste
       assert.equal(raw.data?.content, legacy.content);
     }
   );
+  await t.test(
+    'IA collection filters preserve old favorites, isolate resources and obey ownership',
+    async () => {
+      const resource = (
+        await b.request('/api/entries', 'POST', {
+          kind: 'favorite',
+          title: '资料筛选测试',
+          content: JSON.stringify({ format: 'shangan-resource-v1', slug: 'behavioral-stories' }),
+          url: 'https://example.com/resources/test',
+        })
+      ).data.entry;
+      const old = (
+        await b.request('/api/entries', 'POST', {
+          kind: 'favorite',
+          title: '此前收藏的岗位',
+          content: '原有文字收藏应继续可见',
+        })
+      ).data.entry;
+      const jobs = (await b.request('/api/entries?kind=favorite&collection=jobs')).data.entries;
+      const resources = (await b.request('/api/entries?kind=favorite&collection=resources')).data
+        .entries;
+      assert.ok(jobs.some((entry: any) => entry.id === old.id));
+      assert.ok(!jobs.some((entry: any) => entry.id === resource.id));
+      assert.ok(resources.some((entry: any) => entry.id === resource.id));
+      assert.ok(!resources.some((entry: any) => entry.id === old.id));
+      assert.equal(
+        (await a.request('/api/entries?kind=favorite&id=' + resource.id)).data.entries.length,
+        0
+      );
+      assert.equal(
+        (await b.request('/api/entries?kind=favorite&id=' + old.id)).data.entries[0].content,
+        old.content
+      );
+      assert.equal((await b.request('/api/profile')).data.profile.user_id, pb.user_id);
+    }
+  );
+  await t.test(
+    'server-rendered search stays private and read-only navigation preserves records and user ID',
+    async () => {
+      const title = 'IA-private-record-' + Date.now();
+      const record = (
+        await b.request('/api/entries', 'POST', {
+          kind: 'application',
+          title,
+          content: '导航期间不可被修改',
+          company: title + '-only-owner',
+          status: 'interview',
+        })
+      ).data.entry;
+      const cookie = [...b.cookies].map(([key, value]) => key + '=' + value).join('; ');
+      const otherCookie = [...a.cookies].map(([key, value]) => key + '=' + value).join('; ');
+      const before = await db.db.from('workspace_entries').select('*').order('id');
+      assert.equal(before.error, null);
+      const own = await fetch(base + '/search?q=' + title, { headers: { Cookie: cookie } });
+      const other = await fetch(base + '/search?q=' + title, { headers: { Cookie: otherCookie } });
+      const publicResponse = await fetch(base + '/search?q=' + title);
+      const ownHtml = await own.text(),
+        otherHtml = await other.text(),
+        guestHtml = await publicResponse.text();
+      assert.ok(ownHtml.includes(record.id));
+      assert.ok(ownHtml.includes(title + '-only-owner'));
+      assert.ok(!otherHtml.includes(record.id));
+      assert.ok(!otherHtml.includes(title + '-only-owner'));
+      assert.ok(!guestHtml.includes(record.id));
+      assert.ok(!guestHtml.includes(title + '-only-owner'));
+      assert.match(own.headers.get('cache-control') || '', /no-store/);
+      for (const path of [
+        '/workspace',
+        '/resume?id=' + resume.id,
+        '/resources',
+        '/interview-center/history',
+      ]) {
+        const response = await fetch(base + path, { headers: { Cookie: cookie } });
+        assert.equal(response.status, 200);
+        await response.arrayBuffer();
+      }
+      const after = await db.db.from('workspace_entries').select('*').order('id');
+      assert.equal(after.error, null);
+      assert.deepEqual(after.data, before.data);
+      assert.equal((await b.request('/api/profile')).data.profile.user_id, pb.user_id);
+      assert.equal(
+        (await b.request('/api/entries?kind=application&id=' + record.id)).data.entries[0].content,
+        '导航期间不可被修改'
+      );
+    }
+  );
 });

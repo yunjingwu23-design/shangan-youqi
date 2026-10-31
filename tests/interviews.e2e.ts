@@ -76,7 +76,15 @@ test('internal interview UI: real private upload, edit transcript, fixture AI re
     await page.getByLabel('邮箱验证码').fill(await mailboxCode(email));
     await page.getByRole('button', { name: '验证并进入工作台' }).click();
     await expect(page).toHaveURL('/workspace');
-    await page.getByRole('link', { name: /AI 面试复盘/ }).click();
+    await page.getByRole('link', { name: '上岸有期首页', exact: true }).click();
+    await page
+      .getByRole('navigation', { name: '主站导航', exact: true })
+      .getByRole('link', { name: '面试中心', exact: true })
+      .click();
+    await page
+      .getByRole('navigation', { name: '面试中心模块导航', exact: true })
+      .getByRole('link', { name: 'AI 面试复盘', exact: true })
+      .click();
     await expect(page.getByRole('heading', { name: '每次面试，都有下一步' })).toBeVisible();
     await page.getByRole('link', { name: '上传面试录音', exact: true }).click();
     await page.getByLabel('复盘标题').fill('产品经理 · 录音复盘内测');
@@ -86,10 +94,26 @@ test('internal interview UI: real private upload, edit transcript, fixture AI re
     await expect(page.getByText('上传前，请确认录音授权')).toBeVisible();
     await page.getByRole('button', { name: '上传并开始转写' }).click();
     await expect(page).toHaveURL(/\/new$/);
+    await page
+      .getByRole('navigation', { name: '主站导航', exact: true })
+      .getByRole('link', { name: '找岗位', exact: true })
+      .click();
+    await expect(page).toHaveURL('/jobs');
+    await page.getByRole('button', { name: '返回上一页', exact: true }).click();
+    await expect(page.getByLabel('复盘标题')).toHaveValue('产品经理 · 录音复盘内测');
+    await expect(page.getByText('legal-synthetic-test.wav', { exact: true })).toBeVisible();
     await page.getByRole('checkbox', { name: /我确认录音来源合法/ }).check();
     await page.screenshot({ path: 'test-results/interview-upload.png', fullPage: true });
     await page.getByRole('button', { name: '上传并开始转写' }).click();
     await expect(page).toHaveURL(/\/progress$/);
+    await expect(
+      page.getByRole('navigation', { name: '主站导航', exact: true }).getByRole('link')
+    ).toHaveCount(4);
+    await expect(
+      page
+        .getByRole('navigation', { name: '主站导航', exact: true })
+        .getByRole('link', { name: '面试中心', exact: true })
+    ).toHaveAttribute('aria-current', 'page');
     await expect(page.getByRole('heading', { name: '排队中' })).toBeVisible();
     await runInterviewTask(admin, provider);
     await expect(page.getByRole('heading', { name: '待校对' })).toBeVisible();
@@ -100,12 +124,30 @@ test('internal interview UI: real private upload, edit transcript, fixture AI re
     await page
       .getByLabel('第 1 段逐字稿')
       .fill('我负责需求梳理，并与工程师确认验收标准。这是人工校对后的文字。');
+    await page
+      .getByRole('navigation', { name: '主站导航', exact: true })
+      .getByRole('link', { name: '面经资料', exact: true })
+      .click();
+    await expect(page).toHaveURL('/resources');
+    await page.getByRole('button', { name: '返回上一页', exact: true }).click();
+    await expect(page.getByLabel('第 1 段说话人')).toHaveValue('候选人');
+    await expect(page.getByLabel('第 1 段逐字稿')).toHaveValue(
+      '我负责需求梳理，并与工程师确认验收标准。这是人工校对后的文字。'
+    );
     await page.getByRole('button', { name: '保存校对稿' }).click();
     await expect(page.getByRole('status')).toContainText('校对稿已保存');
     await page.getByRole('checkbox', { name: /我已校对当前逐字稿/ }).check();
     await page.screenshot({ path: 'test-results/interview-transcript.png', fullPage: true });
     await page.getByRole('button', { name: '确认并生成报告' }).click();
     await expect(page).toHaveURL(/\/progress$/);
+    await expect(
+      page.getByRole('navigation', { name: '主站导航', exact: true }).getByRole('link')
+    ).toHaveCount(4);
+    await expect(
+      page
+        .getByRole('navigation', { name: '主站导航', exact: true })
+        .getByRole('link', { name: '面试中心', exact: true })
+    ).toHaveAttribute('aria-current', 'page');
     await runInterviewTask(admin, provider);
     await expect(page.getByRole('heading', { name: '报告已保存' })).toBeVisible();
     await page.getByRole('link', { name: '查看已保存报告' }).click();
@@ -113,6 +155,13 @@ test('internal interview UI: real private upload, edit transcript, fixture AI re
     await expect(page.getByText('这是人工校对后的文字。', { exact: false }).first()).toBeVisible();
     await page.getByRole('button', { name: '编辑报告', exact: true }).click();
     await page.getByLabel('复盘概述').fill('我的人工编辑复盘总结。');
+    await page
+      .getByRole('navigation', { name: '主站导航', exact: true })
+      .getByRole('link', { name: '找岗位', exact: true })
+      .click();
+    await expect(page).toHaveURL('/jobs');
+    await page.getByRole('button', { name: '返回上一页', exact: true }).click();
+    await expect(page.getByLabel('复盘概述')).toHaveValue('我的人工编辑复盘总结。');
     await page.getByRole('button', { name: '保存报告', exact: true }).click();
     await expect(page.getByRole('status')).toContainText('人工编辑已保存');
     await page.reload();
@@ -122,6 +171,12 @@ test('internal interview UI: real private upload, edit transcript, fixture AI re
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)
     ).toBeFalsy();
+    await expect(page.getByRole('navigation', { name: '移动端核心导航' })).toBeVisible();
+    await expect(
+      page
+        .getByRole('navigation', { name: '移动端核心导航' })
+        .getByRole('link', { name: '面试中心', exact: true })
+    ).toHaveAttribute('aria-current', 'page');
     await page.screenshot({ path: 'test-results/interview-report-mobile.png', fullPage: true });
     page.once('dialog', (dialog) => dialog.accept());
     await page.getByRole('button', { name: '删除录音与全部复盘数据' }).click();
