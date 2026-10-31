@@ -3,6 +3,7 @@ import './globals.css';
 import './(site)/site.css';
 import './ia.css';
 import './resume-files.css';
+import './admin.css';
 import { SiteChrome } from '@/components/site-navigation';
 import { siteSession } from '@/lib/site-session';
 export const dynamic = 'force-dynamic';

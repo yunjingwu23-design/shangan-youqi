@@ -29,7 +29,25 @@ async function login(page: Page, email: string) {
 async function removeUser(email: string) {
   const users = await admin.auth.admin.listUsers();
   const user = users.data.users.find((u) => u.email === email);
-  if (user) await admin.auth.admin.deleteUser(user.id);
+  if (user) {
+    const profile = await admin
+      .from('app_users')
+      .select('user_id')
+      .eq('auth_user_id', user.id)
+      .single();
+    if (profile.data) {
+      const files = await admin
+        .from('jd_import_files')
+        .select('id,file_type')
+        .eq('uploaded_by', profile.data.user_id)
+        .is('attached_job_id', null);
+      for (const file of files.data || []) {
+        await admin.storage.from('jd-originals').remove([`${file.id}.${file.file_type}`]);
+        await admin.from('jd_import_files').delete().eq('id', file.id);
+      }
+    }
+    await admin.auth.admin.deleteUser(user.id);
+  }
 }
 test('persona 1: guest finds conversion internships in two steps, filters survive details and public guides remain open', async ({
   page,
@@ -165,8 +183,8 @@ test('persona 2: logged-in table, persisted status, cloud resume, draft return, 
     expect((await page.request.get('/api/admin/jobs')).status()).toBe(403);
     console.info('IA career: application status and personal resource collection passed');
     const authorized = await admin
-      .from('site_managers')
-      .insert({ user_id: before.profile.user_id });
+      .from('admin_memberships')
+      .insert({ user_id: before.profile.user_id, role: 'editor' });
     expect(authorized.error).toBeNull();
     await page.goto('/admin');
     await expect(page.getByRole('navigation', { name: '后台导航' }).getByRole('link')).toHaveText([
@@ -177,15 +195,16 @@ test('persona 2: logged-in table, persisted status, cloud resume, draft return, 
     ]);
     await expect(page.getByRole('navigation', { name: '主站导航', exact: true })).toHaveCount(0);
     await page.getByRole('link', { name: '打开岗位管理 →', exact: true }).click();
+    await page.getByRole('link', { name: /导入 \/ 新建 JD/ }).click();
     await page.getByLabel('公司', { exact: true }).fill('本地运营导航草稿');
-    await page.getByLabel('导入 JD 文本（TXT）').setInputFiles({
+    await page.getByLabel('手动上传 JD（TXT / DOCX / PDF）').setInputFiles({
       name: 'authorized-jd.txt',
       mimeType: 'text/plain',
       buffer: Buffer.from('本地授权测试 JD，仅验证文本导入与草稿恢复。'),
     });
-    await expect(page.getByRole('textbox', { name: '岗位职责', exact: true })).toHaveValue(
-      '本地授权测试 JD，仅验证文本导入与草稿恢复。'
-    );
+    await expect(
+      page.getByRole('textbox', { name: '原始 JD / 校订文本', exact: true })
+    ).toHaveValue('本地授权测试 JD，仅验证文本导入与草稿恢复。');
     await page
       .getByRole('navigation', { name: '后台导航' })
       .getByRole('link', { name: '数据中心', exact: true })
@@ -193,9 +212,9 @@ test('persona 2: logged-in table, persisted status, cloud resume, draft return, 
     await expect(page).toHaveURL('/admin/data');
     await page.getByRole('button', { name: '返回上一页', exact: true }).click();
     await expect(page.getByLabel('公司', { exact: true })).toHaveValue('本地运营导航草稿');
-    await expect(page.getByRole('textbox', { name: '岗位职责', exact: true })).toHaveValue(
-      '本地授权测试 JD，仅验证文本导入与草稿恢复。'
-    );
+    await expect(
+      page.getByRole('textbox', { name: '原始 JD / 校订文本', exact: true })
+    ).toHaveValue('本地授权测试 JD，仅验证文本导入与草稿恢复。');
     await page
       .getByRole('navigation', { name: '后台导航' })
       .getByRole('link', { name: '系统管理', exact: true })

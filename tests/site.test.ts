@@ -3,14 +3,19 @@ import assert from 'node:assert/strict';
 import { createClient } from '@supabase/supabase-js';
 import { admin, SessionClient, dbUrl, anonKey, base } from './helpers';
 import { emptyResume } from '../lib/resume';
+import { emptyAdminDraft } from '../lib/admin/model';
+import { localAdminSql } from './admin-fixtures';
 test('reconnected site: published jobs, operator RLS and private resume persistence', async (t) => {
   const a = new SessionClient(),
     b = new SessionClient(),
     guest = new SessionClient();
   const users: string[] = [],
     jobs: string[] = [];
+  let operatorId: string | undefined;
   t.after(async () => {
     for (const id of jobs) await admin.from('job_catalog').delete().eq('id', id);
+    if (operatorId && /^[a-f0-9-]{36}$/.test(operatorId))
+      localAdminSql(`delete from public.admin_memberships where user_id='${operatorId}'::uuid;`);
     for (const id of users) await admin.auth.admin.deleteUser(id);
   });
   await a.authenticate(`site-a-${Date.now()}@example.com`);
@@ -20,10 +25,12 @@ test('reconnected site: published jobs, operator RLS and private resume persiste
   users.push(da.session.user.id, db.session.user.id);
   const pa = (await a.request('/api/profile')).data.profile,
     pb = (await b.request('/api/profile')).data.profile;
+  operatorId = pa.user_id;
   const anonymous = createClient(dbUrl, anonKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   const input = {
+    ...emptyAdminDraft,
     company: '本地测试公司',
     title: '整站接入测试岗位',
     type: 'daily_internship',
@@ -38,7 +45,8 @@ test('reconnected site: published jobs, operator RLS and private resume persiste
     mail_subject: '测试主题',
     aliases: ['fixture-company'],
     retention_evidence: '',
-    state: 'draft',
+    raw_jd:
+      '本地测试公司招聘整站接入测试岗位。本地测试要求。仅用于本地验证，不会发布到正式项目。投递邮箱 fixture@example.com。',
   };
   let job: any;
   await t.test(
@@ -49,9 +57,13 @@ test('reconnected site: published jobs, operator RLS and private resume persiste
       assert.ok((await db.db.from('site_managers').insert({ user_id: pb.user_id })).error);
       assert.ok((await db.db.from('job_catalog').insert(input)).error);
       assert.ifError((await admin.from('site_managers').insert({ user_id: pa.user_id })).error);
+      assert.equal((await a.request('/api/admin/jobs')).response.status, 403);
+      assert.ifError(
+        (await admin.from('admin_memberships').insert({ user_id: pa.user_id, role: 'super_admin' }))
+          .error
+      );
       const draft = await a.request('/api/admin/jobs', 'POST', {
         job: input,
-        sourceReviewed: false,
       });
       assert.equal(draft.response.status, 201, JSON.stringify(draft.data));
       job = draft.data.job;
@@ -75,14 +87,16 @@ test('reconnected site: published jobs, operator RLS and private resume persiste
         sourceReviewed: false,
       });
       assert.equal(noReview.response.status, 400);
-      const published = await a.request('/api/admin/jobs', 'POST', {
-        id: job.id,
-        expectedUpdatedAt: job.updated_at,
-        job: { ...input, state: 'published' },
-        sourceReviewed: true,
-      });
-      assert.equal(published.response.status, 200, JSON.stringify(published.data));
-      job = published.data.job;
+      for (const action of ['submit', 'approve', 'publish']) {
+        const result = await a.request(`/api/admin/jobs/${job.id}/transition`, 'POST', {
+          expectedVersion: job.version,
+          action,
+          reason: '本地端到端验证，已核对来源、职责要求与投递方式。',
+          sourceChecked: true,
+        });
+        assert.equal(result.response.status, 200, JSON.stringify(result.data));
+        job = result.data.job;
+      }
       const visible = await anonymous.from('job_catalog').select('*').eq('id', job.id);
       assert.equal(visible.data?.length, 1);
       assert.equal(visible.data?.[0].contacts[0].email, 'fixture@example.com');
@@ -91,7 +105,7 @@ test('reconnected site: published jobs, operator RLS and private resume persiste
         .update({ title: '未授权篡改' })
         .eq('id', job.id)
         .select();
-      assert.equal(forbidden.data?.length, 0);
+      assert.ok(forbidden.error);
       const page = await fetch(`${base}/jobs/${job.id}`);
       assert.equal(page.status, 200);
       const html = await page.text();

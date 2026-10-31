@@ -9,6 +9,7 @@ const scriptSources =
     : "'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'";
 const config: NextConfig = {
   poweredByHeader: false,
+  outputFileTracingIncludes: { '/api/admin/jd-import': ['./public/vendor/resume/pdfium.wasm'] },
   async headers() {
     return [
       {

@@ -68,6 +68,21 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
                 </div>
               ))}
               {job.mail_subject && <p>邮件标题要求：{job.mail_subject}</p>}
+              {job.application_instructions && (
+                <>
+                  <h3>本岗位投递说明</h3>
+                  <p className="site-prose">{job.application_instructions}</p>
+                </>
+              )}
+              {job.deadline_at && (
+                <p>
+                  截止时间（北京时间）：
+                  {new Date(job.deadline_at).toLocaleString('zh-CN', {
+                    timeZone: 'Asia/Shanghai',
+                    hour12: false,
+                  })}
+                </p>
+              )}
               <div className="site-actions">
                 {job.apply_url && (
                   <a

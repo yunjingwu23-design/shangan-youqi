@@ -59,6 +59,8 @@ export type CatalogJob = z.infer<typeof catalogJobSchema> & {
   published_at: string | null;
   updated_at: string;
   preview?: boolean;
+  application_instructions?: string;
+  deadline_at?: string | null;
 };
 export const exampleJobs: CatalogJob[] = [
   {

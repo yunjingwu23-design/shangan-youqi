@@ -104,9 +104,19 @@ function LocationNavigation() {
               <>
                 <span aria-hidden="true">/</span>
                 <span aria-current="page">
-                  {path === '/admin/jobs'
-                    ? '岗位管理与 JD 录入'
-                    : adminLinks.find((link) => link.href === path)?.label || '管理页面'}
+                  {path === '/admin/jobs/new'
+                    ? '导入 / 新建 JD'
+                    : path.startsWith('/admin/jobs/')
+                      ? 'JD 编辑与审核'
+                      : path === '/admin/review'
+                        ? '审核工作台'
+                        : path === '/admin/logs'
+                          ? '操作日志'
+                          : path === '/admin/accept'
+                            ? '领取管理员邀请'
+                            : path === '/admin/jobs'
+                              ? '岗位管理与 JD 录入'
+                              : adminLinks.find((link) => link.href === path)?.label || '管理页面'}
                 </span>
               </>
             )}
@@ -201,8 +211,12 @@ export function SiteChrome({
                     aria-current={
                       (
                         link.href === '/admin'
-                          ? ['/admin', '/admin/jobs'].includes(path)
-                          : path === link.href
+                          ? path === '/admin' ||
+                            path.startsWith('/admin/jobs') ||
+                            path === '/admin/review'
+                          : link.href === '/admin/system'
+                            ? path === link.href || path === '/admin/logs'
+                            : path === link.href
                       )
                         ? 'page'
                         : undefined

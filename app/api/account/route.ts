@@ -4,6 +4,7 @@ import { api, actor, ApiError, databaseError, readBody } from '@/lib/api';
 import { adminSupabase } from '@/lib/supabase/admin';
 import { purgeInterviewAudio } from '@/lib/interviews/server';
 import { purgeResumeFiles } from '@/lib/resume-files/server';
+import { adminError } from '@/lib/admin/server';
 export const DELETE = api(async (request) => {
   z.object({ confirmation: z.literal('注销账号') })
     .strict()
@@ -18,6 +19,8 @@ export const DELETE = api(async (request) => {
     (item) => item.method === 'otp' && Math.floor(Date.now() / 1000) - item.timestamp < 600
   );
   if (!recent) throw new ApiError(403, '为保护账号，请退出并重新验证邮箱后，在 10 分钟内注销。');
+  const administrator = await db.rpc('admin_assert_account_deletable');
+  if (administrator.error?.code !== 'PGRST202') adminError(administrator.error);
   await purgeInterviewAudio(identity);
   await purgeResumeFiles(identity);
   // The target always comes from the validated session, never from request input.

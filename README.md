@@ -33,6 +33,7 @@ npm run dev
 - 删除个人数据（账号保留）及注销账号（邮箱验证后 10 分钟内，级联删除身份与业务数据）。
 - 官方 Logo、响应式登录/工作台、空状态、错误态、加载态、删除确认、基础无障碍。
 - 微信按钮禁用并标注「即将开放」，没有二维码、假授权或自动账号合并。
+- P0 运营后台：独立角色与安全初始化/邀请、横向 JD 表格、TXT/DOCX/文字型 PDF 私有导入、草稿与版本审核、真实发布/下架/过期、来源和操作日志。编辑、审核和发布在数据库中验证权限与版本。
 
 跨设备同步采用登录/页面加载/切换分类/返回标签页/手动刷新时从云端重新读取；当前没有实时 WebSocket 协同。面试复盘使用持久队列和独立 Worker，默认 `INTERVIEWS_ENABLED=false`；没有 OpenAI Key 时不会返回伪造的成功转写或报告。
 
@@ -46,6 +47,8 @@ npm run dev
 - [新的站点地图、新旧路由映射、导航与移动端方案](docs/INFORMATION_ARCHITECTURE.md)
 - [主站重新接入、功能边界、岗位目录迁移与运营权限](docs/SITE_RECONNECTION.md)
 - [简历文件上传、原版编辑、三种模板及格式限制](docs/RESUME_FILES.md)
+- [P0 后台数据库、权限矩阵、页面与验收计划](docs/P0_ADMIN_PLAN.md)
+- [后台迁移、首个超级管理员初始化、API 与上线步骤](docs/ADMIN_SETUP.md)
 
 ## 验证
 
@@ -55,6 +58,7 @@ npm run dev
 npm run typecheck
 npm test
 npm run test:integration
+npm run test:admin
 npm run test:site
 npm run test:resume-files
 npm run test:resume-layout
