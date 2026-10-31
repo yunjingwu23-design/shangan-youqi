@@ -6,18 +6,21 @@
 
 当前执行环境只有本地开发凭证，尚未修改你的托管数据库，也未核验 Vercel Ready。不要重配已有邮箱、密钥或 Codex 云环境。以下步骤由已有 Supabase 项目所有者在 SQL Editor 完成，不向聊天发送任何密钥。
 
-1. 打开 [此项目 SQL Editor](https://supabase.com/dashboard/project/lxecahdyvrdfezgtmbfp/sql/new)。确认已有 `app_users` 与 `job_catalog`。如果尚未安装岗位目录，先运行 [202610310003_public_catalog.sql](../supabase/migrations/202610310003_public_catalog.sql)。不要重跑账号迁移，不要 reset 数据库。
-2. 打开新增的 [202610310005_admin_workflow.sql](../supabase/migrations/202610310005_admin_workflow.sql)，复制**整份 SQL**到一个新查询中，以项目所有者身份作为一个事务执行。它保留原用户 ID、投递记录与已有岗位；首次创建后台表、私有桶和受控函数。已经成功执行后不要重复运行该迁移。后续升级使用新迁移。
-3. 在同一项目的新查询中执行下面的一次性初始化。此邮箱由项目所有者指定，且必须已在本网站完成真实邮箱验证：
+1. 打开 [合并安装/修复脚本 install-admin.sql](https://github.com/yunjingwu23-design/shangan-youqi/blob/main/supabase/install-admin.sql)，用代码区的 **Copy raw file** 按钮复制全部 SQL。此入口包含岗位目录、后台及首位管理员初始化，可处理缺少 `site_managers`、未安装岗位目录或上次只运行一部分的情况。
+2. 打开 [此项目 SQL Editor](https://supabase.com/dashboard/project/lxecahdyvrdfezgtmbfp/sql/new)，**新建查询**，粘贴全部代码，确认角色为 `postgres`，不要只选中某一行，点击 Run。整份脚本作为一个事务执行，失败全部回滚；重复运行保留原用户 ID、个人记录、岗位、审核与现有角色，不会重置已初始化的超级管理员。
+3. 脚本内已包含为 `876901712@qq.com` 首次初始化的操作。该邮箱必须已在网站完成真实验证码登录。成功后最后结果中的六列 `jobs_ok`、`admin_table_ok`、`bootstrap_ok`、`workflow_ok`、`private_bucket_ok`、`owner_admin_ok` 应全部为 `true`，**无需再单独运行初始化命令**。若已有其他超级管理员，脚本保留该管理员并让 `owner_admin_ok` 反映实际情况，应由现有超级管理员邀请该邮箱。
+
+合并脚本由已审阅的 `202610310003_public_catalog.sql` 和 `202610310005_admin_workflow.sql` 生成，前置账号体系必须存在。完成后不要再手工重跑这两份历史迁移，不要 reset 数据库。已通过 CLI 管理迁移账本的项目继续使用原迁移链；合并入口不写入或伪造托管迁移账本。
+
+以下命令保留给已经通过原迁移链安装好后台、但尚未初始化的项目使用，不是缺表修复方法：
 
 ```sql
 select public.bootstrap_site_admin('876901712@qq.com');
 ```
 
-成功返回内部 `user_id` 和 `role: super_admin`。若提示 `ADMIN_VERIFIED_ACCOUNT_REQUIRED`，先用该邮箱在网站完成验证码登录，再执行；若提示 `ADMIN_BOOTSTRAPPED`，表示已经初始化，后续通过既有超级管理员邀请，不能反复执行以恢复或提升任意账号。
+单独初始化成功返回内部 `user_id` 和 `role: super_admin`。若提示 `ADMIN_VERIFIED_ACCOUNT_REQUIRED`，先用该邮箱在网站完成验证码登录，再重试；若提示 `ADMIN_BOOTSTRAPPED`，表示已经初始化，后续通过既有超级管理员邀请，不能反复执行以恢复或提升任意账号。
 
-4. 在 Vercel 确认包含本次提交的生产部署为 Ready。打开 [正式后台](https://shangan-youqi.vercel.app/admin)，用 `876901712@qq.com` 邮箱 OTP 登录。首次初始化后可重新打开后台；涉及邀请或角色管理时，须在最近一次邮箱验证的 15 分钟内操作。
-5. 按下方验收步骤发布自己拥有授权的真实岗位，并在 [岗位广场](https://shangan-youqi.vercel.app/jobs) 检查。不要把本地验收生成的公司/JD 当作正式招聘信息。
+在 Vercel 确认生产部署为 Ready 后，打开 [正式后台](https://shangan-youqi.vercel.app/admin)，用 `876901712@qq.com` 邮箱 OTP 登录。涉及邀请或角色管理时，须在最近一次邮箱验证的 15 分钟内操作。按下方验收步骤发布自己拥有授权的真实岗位，在 [岗位广场](https://shangan-youqi.vercel.app/jobs) 检查。
 
 可选：在可信服务端通过 `npm run admin:bootstrap -- --email 876901712@qq.com` 调用相同的一次性初始化函数。脚本只使用已有服务端环境变量，不提供公开初始化 HTTP 接口。
 

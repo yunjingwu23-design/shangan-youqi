@@ -49,6 +49,7 @@ npm run dev
 - [简历文件上传、原版编辑、三种模板及格式限制](docs/RESUME_FILES.md)
 - [P0 后台数据库、权限矩阵、页面与验收计划](docs/P0_ADMIN_PLAN.md)
 - [后台迁移、首个超级管理员初始化、API 与上线步骤](docs/ADMIN_SETUP.md)
+- [SQL Editor 合并安装/修复脚本：自动补齐岗位与后台依赖](supabase/install-admin.sql)
 
 ## 验证
 

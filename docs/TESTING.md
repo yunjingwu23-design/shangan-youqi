@@ -223,3 +223,18 @@ Chromium 完整回归中 11 条场景通过，包含新增后台两条和原邮�
 回归结果：15 项单元、18 项原认证权限场景、7 项岗位/个人记录场景、8 项原版简历文件/隔离/删除场景均通过。生产构建和 TypeScript 通过；PDF 解析所需 `pdfium.wasm` 已确认进入 JD 导入路由的构建追踪清单。默认 `INTERVIEWS_ENABLED=false` 的最终生产构建也通过，后台不依赖 OpenAI Key。
 
 截图和报告在忽略提交的 `.local/admin-verification/`；初次完整浏览器报告位于其中 `full-browser-report/`，手机 JD 表格与审核/日志截图位于 `full-test-results/`。仅包含合成招聘与账号数据，未复制正式简历或面试录音。当前云环境不具备托管项目访问凭证，且网络策略未允许 Vercel，因此本机结果不代表新增 SQL、超级管理员初始化或公网部署已验收。
+
+## 2026-10-31：SQL Editor 缺少岗位目录依赖的安装修复
+
+截图中的 `42883 bootstrap_site_admin does not exist` 与 `42P01 site_managers does not exist` 表明当前项目没有完整安装岗位目录及 P0 后台。新增 [合并安装/修复脚本](../supabase/install-admin.sql)，由历史迁移生成，不修改已发布的历史迁移文件。脚本补齐目录依赖、复用部分已创建的表、恢复完整 RLS/受控函数，并且仅在尚未初始化的项目为指定的已验证邮箱创建首位超级管理员；整份脚本在同一事务中执行，失败回滚。
+
+`npm run test:admin-install` 在本地 Docker 的独立临时 PostgreSQL 数据库中验证六个场景，全部通过（Node runner 显示 7，含父测试）：
+
+1. 只有账号体系时，完整安装并通过实际受控 RPC 完成保存、提交、自审、发布；重复运行后用户 ID、简历记录、岗位、来源、批准、日志及角色快照逐字段相同。后加的旧版权限标记不会在重复运行时获得角色。
+2. 已有目录、已发布岗位及旧编辑授权时安装，原岗位 ID、正文、公开状态与时间戳不变，旧授权首次迁为 editor。
+3. 已有岗位表但缺少 `site_managers` 时修复成功。
+4. 上次中断仅创建了 `admin_memberships` 时继续安装，既有停用的 editor 保持停用。
+5. 账号基础缺失或指定邮箱未验证时明确失败，未留下半套岗位/后台表，已有个人记录保持。
+6. 项目已有另一位超级管理员时，重复安装不改写权限，不把另一个邮箱自动提升为管理员。
+
+测试使用真实 PostgreSQL DDL/RLS/RPC，临时库中只提供必要的 Auth/Storage 系统表夹具与合成账号，不调用正式 Auth/邮件/Storage 服务，不代表 QQ 邮件或公网已验收。临时数据库在测试后全部删除，运行中的本地业务库与托管项目均未修改。`node scripts/build-admin-installer.mjs --check` 同时核对生成 SQL 与原迁移来源保持一致。
