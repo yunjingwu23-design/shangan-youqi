@@ -49,6 +49,7 @@ npm run dev
 - [简历文件上传、原版编辑、三种模板及格式限制](docs/RESUME_FILES.md)
 - [P0 后台数据库、权限矩阵、页面与验收计划](docs/P0_ADMIN_PLAN.md)
 - [后台迁移、首个超级管理员初始化、API 与上线步骤](docs/ADMIN_SETUP.md)
+- [QQ 通道发送邀请邮件、邮箱验证后自动进入后台及模板设置](docs/ADMIN_EMAIL_INVITATIONS.md)
 - [SQL Editor 合并安装/修复脚本：自动补齐岗位与后台依赖](supabase/install-admin.sql)
 - [工作台 11 个投递阶段、旧状态兼容与正式数据库升级](docs/WORKSPACE_STAGES.md)
 

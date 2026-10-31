@@ -1,18 +1,19 @@
 import { randomBytes, createHash } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { api, readBody } from '@/lib/api';
+import { api, ApiError, readBody } from '@/lib/api';
 import { siteManager } from '@/lib/catalog-server';
 import { adminRoleSchema } from '@/lib/admin/model';
 import { adminError } from '@/lib/admin/server';
-import { config } from '@/lib/config';
 import { consumeLimit } from '@/lib/rate-limit';
+import { invitationUrl, sendInvitationEmail } from '@/lib/admin/invitations';
 const schema = z.discriminatedUnion('action', [
   z
     .object({
       action: z.literal('invite'),
       email: z.email().trim().toLowerCase().max(254),
       role: adminRoleSchema,
+      delivery: z.enum(['link', 'email']).default('link'),
     })
     .strict(),
   z
@@ -53,8 +54,30 @@ export const POST = api(async (request) => {
         invite_hash: hash,
       });
     adminError(result.error);
+    let delivery: {
+      status: 'not_requested' | 'sent' | 'failed';
+      message?: string;
+      retryAfter?: number;
+    } = { status: 'not_requested' };
+    if (input.delivery === 'email') {
+      try {
+        await sendInvitationEmail(request, input.email, token);
+        delivery = { status: 'sent' };
+      } catch (error) {
+        delivery = {
+          status: 'failed',
+          message:
+            error instanceof ApiError
+              ? error.message
+              : '邀请已创建，邮件暂时发送失败。可复制下方链接，或稍后重试。',
+          ...(error instanceof ApiError && error.retryAfter
+            ? { retryAfter: error.retryAfter }
+            : {}),
+        };
+      }
+    }
     return NextResponse.json(
-      { invitation: result.data, url: config().origin + '/admin/accept?token=' + token },
+      { invitation: result.data, url: invitationUrl(token, delivery.status === 'sent'), delivery },
       { status: 201 }
     );
   }

@@ -376,6 +376,7 @@
 .admin-invite-accept p {
   line-height: 1.9;
   color: #8b977e;
+  overflow-wrap: anywhere;
 }
 .admin-main code {
   font-size: 11px;

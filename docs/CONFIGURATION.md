@@ -28,6 +28,8 @@
 
 ## 邮箱 OTP 与 SMTP（正式发送的必要配置）
 
+管理员邮件邀请复用同一个 SMTP 通道，没有新增发信密钥或环境变量；新旧用户的两类邮件正文都需使用最新版 `supabase/templates/otp.html`，并允许本站邀请回跳地址。具体链接及步骤见 [ADMIN_EMAIL_INVITATIONS.md](ADMIN_EMAIL_INVITATIONS.md)。
+
 在 Supabase Authentication 设置中：
 
 1. 启用 Email provider、允许新用户注册、保持邮箱确认开启；不启用匿名登录，不配置微信或其他 OAuth provider，不启用手动身份 linking。

@@ -3,15 +3,33 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, LoaderCircle, Mail, MessageCircle, ChevronLeft } from 'lucide-react';
 import { OTP_INPUT_PATTERN, OTP_MIN_LENGTH, OTP_MAX_LENGTH } from '@/lib/otp';
-export function LoginForm({ nextPath = '/workspace' }: { nextPath?: string }) {
+export function LoginForm({
+  nextPath = '/workspace',
+  initialEmail = '',
+  initialCodeSent = false,
+  initialCooldown = 0,
+  lockEmail = false,
+  showAlternatives = true,
+  verificationLabel,
+}: {
+  nextPath?: string;
+  initialEmail?: string;
+  initialCodeSent?: boolean;
+  initialCooldown?: number;
+  lockEmail?: boolean;
+  showAlternatives?: boolean;
+  verificationLabel?: string;
+}) {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(initialEmail);
   const [token, setToken] = useState('');
-  const [step, setStep] = useState<'email' | 'verify'>('email');
+  const [step, setStep] = useState<'email' | 'verify'>(initialCodeSent ? 'verify' : 'email');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
-  const [cooldown, setCooldown] = useState(0);
+  const [notice, setNotice] = useState(
+    initialCodeSent ? '请输入邀请邮件中的验证码，验证后会自动进入后台。' : ''
+  );
+  const [cooldown, setCooldown] = useState(initialCooldown);
   const tokenRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -72,7 +90,7 @@ export function LoginForm({ nextPath = '/workspace' }: { nextPath?: string }) {
   return (
     <>
       <form onSubmit={submit} className="auth-form">
-        {step === 'verify' && (
+        {step === 'verify' && !lockEmail && (
           <button
             type="button"
             className="text-button back-button"
@@ -100,7 +118,7 @@ export function LoginForm({ nextPath = '/workspace' }: { nextPath?: string }) {
             onChange={(e) => setEmail(e.target.value.trim().toLowerCase())}
             required
             maxLength={254}
-            readOnly={step === 'verify'}
+            readOnly={step === 'verify' || lockEmail}
           />
         </div>
         {step === 'verify' && (
@@ -156,28 +174,31 @@ export function LoginForm({ nextPath = '/workspace' }: { nextPath?: string }) {
                 ? cooldown > 0
                   ? `${cooldown} 秒后重试`
                   : '获取邮箱验证码'
-                : nextPath === '/workspace'
-                  ? '验证并进入工作台'
-                  : '验证并继续'}
+                : verificationLabel ||
+                  (nextPath === '/workspace' ? '验证并进入工作台' : '验证并继续')}
               <ArrowRight size={18} />
             </>
           )}
         </button>
         <p className="auth-hint">无需密码，首次验证后将自动创建账号。</p>
       </form>
-      <div className="divider">
-        <span>其他登录方式</span>
-      </div>
-      <button
-        className="button wechat full"
-        type="button"
-        disabled
-        aria-label="微信扫码登录，即将开放"
-      >
-        <MessageCircle size={19} />
-        <span>微信扫码登录</span>
-        <small>即将开放</small>
-      </button>
+      {showAlternatives && (
+        <>
+          <div className="divider">
+            <span>其他登录方式</span>
+          </div>
+          <button
+            className="button wechat full"
+            type="button"
+            disabled
+            aria-label="微信扫码登录，即将开放"
+          >
+            <MessageCircle size={19} />
+            <span>微信扫码登录</span>
+            <small>即将开放</small>
+          </button>
+        </>
+      )}
       <details className="privacy-details">
         <summary>账号与隐私说明</summary>
         <p>

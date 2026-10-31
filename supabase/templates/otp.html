@@ -1,7 +1,27 @@
 <!doctype html>
 <html lang="zh-CN">
   <body style="font-family: sans-serif; color: #143c32">
+    <img src="{{ .SiteURL }}/logo-original.png" alt="上岸有期官方 Logo" width="64" height="64" />
     <h2>上岸有期</h2>
+    {{ if and .RedirectTo (ne .RedirectTo .SiteURL) (ne .RedirectTo (printf "%s/" .SiteURL)) }}
+    <h3>你收到一份运营后台邀请</h3>
+    <p>打开下面的邀请链接，输入本邮件中的验证码，验证邮箱后即可自动进入后台。</p>
+    <p>
+      <a
+        href="{{ .RedirectTo }}"
+        style="
+          display: inline-block;
+          padding: 12px 20px;
+          background: #25351c;
+          color: #fff;
+          text-decoration: none;
+          border-radius: 6px;
+        "
+        >验证邮箱并进入后台</a
+      >
+    </p>
+    <p>邀请链接 48 小时内有效。验证码过期后，可在邀请页面重新获取。</p>
+    {{ end }}
     <p>你的邮箱验证码是：</p>
     <p style="font-size: 32px; letter-spacing: 8px; font-weight: bold">{{ .Token }}</p>
     <p>

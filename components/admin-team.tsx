@@ -94,6 +94,33 @@ export function AdminTeam() {
     setMembers(data.members);
     setInvitations(data.invitations);
   }
+  async function invite(delivery: 'email' | 'link') {
+    setBusy(true);
+    setError('');
+    setNotice('');
+    setLink('');
+    try {
+      const data = await adminCall('/api/admin/team', 'POST', {
+        action: 'invite',
+        email,
+        role,
+        delivery,
+      });
+      setLink(data.url);
+      if (data.delivery?.status === 'failed') setError(data.delivery.message);
+      else
+        setNotice(
+          data.delivery?.status === 'sent'
+            ? '邀请邮件已发送。对方验证邮箱后会自动进入后台。'
+            : '邀请链接已生成，对方验证邮箱后会自动进入后台。'
+        );
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '邀请暂时无法创建。');
+    } finally {
+      setBusy(false);
+    }
+  }
   useEffect(() => {
     void load().catch((e) => setError(e.message));
   }, []);
@@ -102,23 +129,14 @@ export function AdminTeam() {
       <section className="site-card admin-team">
         <h2>邀请管理员</h2>
         <p>
-          邀请绑定指定邮箱，有效期 48 小时、仅可领取一次。请在最近一次邮箱验证后 15 分钟内操作。
+          邮件发到指定邮箱，对方验证后自动进入后台。链接 48 小时有效，请在你最近一次邮箱验证后的 15
+          分钟内发送。
         </p>
         <form
           className="admin-invite-form"
           onSubmit={(e) => {
             e.preventDefault();
-            setBusy(true);
-            setError('');
-            setLink('');
-            void adminCall('/api/admin/team', 'POST', { action: 'invite', email, role })
-              .then(async (data) => {
-                setLink(data.url);
-                setNotice('邀请已创建，请将一次性链接交给指定邮箱使用者。');
-                await load();
-              })
-              .catch((e) => setError(e.message))
-              .finally(() => setBusy(false));
+            void invite('email');
           }}
         >
           <label>
@@ -136,7 +154,15 @@ export function AdminTeam() {
             </select>
           </label>
           <button className="button primary" disabled={busy} type="submit">
-            创建邀请
+            创建并发送邀请
+          </button>
+          <button
+            className="button secondary"
+            disabled={busy}
+            type="button"
+            onClick={() => void invite('link')}
+          >
+            仅生成邀请链接
           </button>
         </form>
         {error && (
@@ -193,7 +219,7 @@ export function AdminTeam() {
             <small>到期（北京时间）：{beijingTime(invite.expires_at)}</small>
             <span>
               {
-                { pending: '待领取', accepted: '已领取', revoked: '已撤销' }[
+                { pending: '待验证邮箱', accepted: '已加入后台', revoked: '已撤销' }[
                   invite.state as 'pending'
                 ]
               }

@@ -1,6 +1,7 @@
 import { test, expect, type Page, type BrowserContext } from '@playwright/test';
 import { base, mailboxCode } from './helpers';
 import { adminFixture, removeAdminFixtures, type AdminFixture } from './admin-fixtures';
+import { invitationMail } from './admin-email-fixtures';
 
 async function useSession(context: BrowserContext, actor: AdminFixture) {
   await context.addCookies(
@@ -157,23 +158,31 @@ test('P0 browser: super-admin creates a bound invitation, invited user logs in a
     await adminChrome(page);
     await page.getByLabel('被邀请邮箱', { exact: true }).fill(invitee.email);
     await page.getByRole('combobox', { name: '邀请角色', exact: true }).selectOption('editor');
-    await page.getByRole('button', { name: '创建邀请', exact: true }).click();
-    await expect(page.getByRole('status')).toContainText('邀请已创建');
+    await page.getByRole('button', { name: '创建并发送邀请', exact: true }).click();
+    await expect(page.getByRole('status')).toContainText('邀请邮件已发送');
     const url = await page
       .getByRole('textbox', { name: '一次性邀请链接', exact: true })
       .inputValue();
     const invited = await invitedContext.newPage();
-    await invited.goto(url);
-    await invited.getByRole('link', { name: '使用被邀请邮箱登录', exact: true }).click();
-    await invited.getByLabel('邮箱地址').fill(invitee.email);
-    await invited.getByRole('button', { name: '获取邮箱验证码', exact: true }).click();
-    await expect(invited.getByRole('status')).toContainText('验证码已发送');
-    await invited.getByLabel('邮箱验证码').fill(await mailboxCode(invitee.email));
-    await invited.getByRole('button', { name: /验证并/ }).click();
-    await expect(invited).toHaveURL(/\/admin\/accept\?token=/);
-    await invited.getByRole('button', { name: '验证并领取邀请', exact: true }).click();
+    const mail = await invitationMail(invitee.email);
+    expect(mail.url.href).toBe(url);
+    await invited.setViewportSize({ width: 390, height: 844 });
+    await invited.goto(mail.url.href);
+    await expect(invited.getByLabel('邮箱地址')).toHaveValue(invitee.email);
+    await expect(invited.getByLabel('邮箱地址')).toHaveAttribute('readonly', '');
+    await expect(invited.getByRole('button', { name: '验证并领取邀请', exact: true })).toHaveCount(
+      0
+    );
+    expect(
+      await invited.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)
+    ).toBe(true);
+    await invited.screenshot({ path: 'test-results/admin-invitation-mobile.png', fullPage: true });
+    await invited.getByLabel('邮箱验证码').fill(mail.code);
+    await invited.getByRole('button', { name: '验证并进入后台', exact: true }).click();
     await expect(invited).toHaveURL('/admin');
     await adminChrome(invited);
+    await invited.goto(mail.url.href);
+    await expect(invited).toHaveURL('/admin');
     await page.reload();
     await page.getByLabel(invitee.email + ' 启用', { exact: true }).uncheck();
     await page
@@ -188,7 +197,8 @@ test('P0 browser: super-admin creates a bound invitation, invited user logs in a
     await expect
       .poll(async () => (await invited.request.get('/api/admin/jobs')).status())
       .toBe(403);
-    await invited.reload();
+    await invited.goto(mail.url.href);
+    await expect(invited).toHaveURL('/admin');
     await expect(
       invited.getByText('当前账号没有运营权限。后台仅向已授权管理员开放。')
     ).toBeVisible();
