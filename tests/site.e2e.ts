@@ -137,14 +137,12 @@ test('persona 2: logged-in table, persisted status, cloud resume, draft return, 
     await page.getByLabel('备注', { exact: true }).fill('原业务接口真实保存');
     await page.getByRole('button', { name: '保存记录', exact: true }).click();
     await page.getByRole('button', { name: '编辑 IA 验收投递记录' }).click();
-    await page.getByRole('combobox', { name: '状态', exact: true }).selectOption('interview');
+    await page.getByRole('combobox', { name: '状态', exact: true }).selectOption('interview_2');
     await page.getByRole('button', { name: '保存记录', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await page.reload();
     await expect(
-      page
-        .getByRole('region', { name: '投递记录', exact: true })
-        .getByText('面试中', { exact: true })
+      page.getByRole('region', { name: '投递记录', exact: true }).getByText('二面', { exact: true })
     ).toBeVisible();
     await chrome(page, '我的求职');
     await page.setViewportSize({ width: 390, height: 844 });
@@ -158,7 +156,7 @@ test('persona 2: logged-in table, persisted status, cloud resume, draft return, 
     expect(before.profile.user_id).toBe(after.profile.user_id);
     const entries = await (await page.request.get('/api/entries?kind=application')).json();
     expect(entries.entries.find((entry: any) => entry.title === 'IA 验收投递记录').status).toBe(
-      'interview'
+      'interview_2'
     );
     await page.getByRole('link', { name: '上岸有期首页', exact: true }).click();
     await expect(page.getByRole('heading', { name: '近期求职事项' })).toBeVisible();

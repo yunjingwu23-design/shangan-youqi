@@ -26,6 +26,7 @@ const catalog = reusable(
 let workflow = reusable(
   readFileSync('supabase/migrations/202610310005_admin_workflow.sql', 'utf8')
 );
+const stages = readFileSync('supabase/migrations/202610310006_workspace_stages.sql', 'utf8');
 workflow = workflow
   .replace(
     'from public.site_managers on conflict do nothing;',
@@ -73,7 +74,10 @@ ${catalog}
 -- 2. 安装/修复三角色、私有原件与版本审核流程。
 ${workflow}
 
--- 3. 只在未初始化过的项目创建首个超级管理员；不替换已存在的角色。
+-- 3. 扩展工作台投递阶段，保留旧状态和全部个人记录。
+${stages}
+
+-- 4. 只在未初始化过的项目创建首个超级管理员；不替换已存在的角色。
 do $owner_setup$
 begin
   if not exists(select 1 from private.admin_bootstrap_guard)

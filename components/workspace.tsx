@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { clearSessionDrafts, useDraftState, useDraftStorage } from '@/components/drafts';
 import { entryPresentation } from '@/lib/entry-presentation';
 import { type Entry, type Profile, kindLabels, statusLabels } from '@/lib/validation';
+import { applicationStatusValues, legacyStatusValues } from '@/lib/application-status';
 import {
   ArrowUpRight,
   BriefcaseBusiness,
@@ -60,6 +61,8 @@ export function Workspace({
   const [confirmation, setConfirmation] = useState('');
   const [deleteEntry, setDeleteEntry] = useState<Entry | null>(null);
   const loadSequence = useRef(0);
+  const tableScroll = useRef<HTMLDivElement>(null);
+  const showSavedStatus = useRef(false);
   async function request(path: string, method = 'GET', data?: unknown) {
     const response = await fetch(path, {
       method,
@@ -102,6 +105,12 @@ export function Workspace({
   useEffect(() => {
     void load();
   }, [load]);
+  useEffect(() => {
+    if (!loading && showSavedStatus.current) {
+      tableScroll.current?.scrollTo({ left: 0 });
+      showSavedStatus.current = false;
+    }
+  }, [entries, loading]);
   const openedEntry = useRef<string | null>(null);
   useEffect(() => {
     const id = params.get('entry');
@@ -177,6 +186,7 @@ export function Workspace({
         editing === 'new' ? 'POST' : 'PATCH',
         editing === 'new' ? { ...draft, kind } : { ...draft, id: (editing as Entry).id }
       );
+      showSavedStatus.current = kind === 'application';
       setEditing(null);
       if (params.has('entry')) window.history.replaceState(null, '', '/workspace');
       await load();
@@ -438,7 +448,7 @@ export function Workspace({
                   </div>
                 ) : (
                   <>
-                    <div className="table-scroll">
+                    <div className="table-scroll" ref={tableScroll}>
                       <table>
                         <thead>
                           <tr>
@@ -603,17 +613,36 @@ export function Workspace({
               <label>
                 状态
                 <select
+                  aria-label="状态"
+                  aria-describedby={
+                    kind === 'application' &&
+                    (draft.status === 'interview' || draft.status === 'closed')
+                      ? 'workspace-status-help'
+                      : undefined
+                  }
                   value={draft.status}
                   onChange={(e) =>
                     setDraft({ ...draft, status: e.target.value as Entry['status'] })
                   }
                 >
-                  {Object.entries(statusLabels).map(([key, label]) => (
-                    <option key={key} value={key}>
-                      {label}
-                    </option>
-                  ))}
+                  {(kind === 'application' ? applicationStatusValues : legacyStatusValues).map(
+                    (key) => (
+                      <option key={key} value={key}>
+                        {statusLabels[key]}
+                      </option>
+                    )
+                  )}
+                  {kind === 'application' &&
+                    (draft.status === 'interview' || draft.status === 'closed') && (
+                      <option value={draft.status}>{statusLabels[draft.status]}</option>
+                    )}
                 </select>
+                {kind === 'application' &&
+                  (draft.status === 'interview' || draft.status === 'closed') && (
+                    <small id="workspace-status-help" className="muted">
+                      原有状态已保留，可按实际进度选择新阶段。
+                    </small>
+                  )}
               </label>
             </div>
             <label>

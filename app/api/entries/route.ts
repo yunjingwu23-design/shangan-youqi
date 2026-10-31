@@ -4,6 +4,12 @@ import { api, actor, ApiError, databaseError, readBody } from '@/lib/api';
 import { entrySchema, entryPatchSchema, kindSchema } from '@/lib/validation';
 import { removeOriginalFile } from '@/lib/resume-files/server';
 import { readOriginal } from '@/lib/resume-files/model';
+import { legacyStatusValues } from '@/lib/application-status';
+function entryWriteError(error: { code?: string } | null, status?: string) {
+  if (error?.code === '23514' && status && !legacyStatusValues.some((value) => value === status))
+    throw new ApiError(409, '工作台状态升级尚未完成，请联系管理员后重试。');
+  databaseError(error);
+}
 export const GET = api(async (request) => {
   const params = new URL(request.url).searchParams;
   const kind = params.get('kind') ? kindSchema.parse(params.get('kind')) : null;
@@ -48,7 +54,7 @@ export const POST = api(async (request) => {
     .insert({ ...input, user_id: userId })
     .select()
     .single();
-  databaseError(error);
+  entryWriteError(error, input.status);
   return NextResponse.json({ entry: data }, { status: 201 });
 }, true);
 export const PATCH = api(async (request) => {
@@ -73,7 +79,7 @@ export const PATCH = api(async (request) => {
     .eq('user_id', userId)
     .select()
     .maybeSingle();
-  databaseError(error);
+  entryWriteError(error, input.status);
   if (!data) throw new ApiError(404, '记录不存在。');
   return NextResponse.json({ entry: data });
 }, true);

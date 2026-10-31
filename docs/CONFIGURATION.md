@@ -61,6 +61,8 @@ npm start
 
 ## 简历文件功能
 
+工作台状态细化为 11 个阶段时，执行独立迁移 `202610310006_workspace_stages.sql`，只扩展已有状态白名单、保留记录和原 RLS。新后台合并安装入口也已包含此迁移；现有站点无需重装后台。步骤见 [WORKSPACE_STAGES.md](WORKSPACE_STAGES.md)。
+
 P0 运营后台另需应用 `202610310005_admin_workflow.sql` 并为已验证账号安全初始化首个超级管理员，没有新增环境变量。操作链接、目标邮箱、只读检查和完整验收见 [ADMIN_SETUP.md](ADMIN_SETUP.md)。旧 `site_managers` 新增行不再授予后台权限；迁移时已有授权保留为 editor。
 
 沿用现有 Supabase URL、公开 key、服务端 key 和限流密钥，**没有新增环境变量或 OpenAI 依赖**。首次上传自动创建 `resume-originals` 私有桶，单文件 3 MiB；采用本站鉴权代理上传/下载，不需要公开桶或浏览器 Storage 权限。3 MiB 的请求也为 Vercel 函数的请求体限制预留了空间，不应自行放大而忽略部署平台限制。

@@ -910,17 +910,28 @@ th.frozen-col {
   border-radius: 50%;
   background: currentColor;
 }
-.status-badge.applied {
+.status-badge.applied,
+.status-badge.assessment {
   background: #edf1fa;
   color: #7086aa;
 }
-.status-badge.interview {
+.status-badge.interview,
+.status-badge.ai_interview,
+.status-badge.interview_1,
+.status-badge.interview_2,
+.status-badge.interview_3,
+.status-badge.interview_4,
+.status-badge.interview_5 {
   background: #f2edf8;
   color: #9c7bb9;
 }
 .status-badge.offer {
   background: #e7f3e9;
   color: #5d9168;
+}
+.status-badge.oral_oc {
+  background: #f0f3df;
+  color: #778a37;
 }
 .status-badge.closed {
   background: #f6ece7;

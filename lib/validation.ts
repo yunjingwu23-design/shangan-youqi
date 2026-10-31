@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { OTP_PATTERN } from './otp';
+import { statusValues } from './application-status';
+export { statusLabels } from './application-status';
 export const emailSchema = z.string().trim().toLowerCase().email('请输入有效的邮箱地址').max(254);
 export const otpRequestSchema = z.object({ email: emailSchema }).strict();
 export const otpVerifySchema = z
@@ -17,7 +19,7 @@ export const profileSchema = z
   })
   .strict();
 export const kindSchema = z.enum(['application', 'resume', 'favorite', 'interview_review']);
-export const statusSchema = z.enum(['planned', 'applied', 'interview', 'offer', 'closed']);
+export const statusSchema = z.enum(statusValues);
 const safeUrl = z
   .string()
   .max(2000)
@@ -42,6 +44,14 @@ export const entrySchema = z
   .strict();
 export const entryPatchSchema = entrySchema
   .omit({ kind: true })
+  // Zod 4 applies nested defaults even inside partial objects. A PATCH must only
+  // write submitted fields; changing a stage must not clear notes/company/URL.
+  .extend({
+    company: entrySchema.shape.company.removeDefault(),
+    status: statusSchema,
+    content: entrySchema.shape.content.removeDefault(),
+    url: safeUrl,
+  })
   .partial()
   .extend({ id: z.string().uuid() })
   .strict();
@@ -57,11 +67,4 @@ export const kindLabels = {
   resume: '简历草稿',
   favorite: '我的收藏',
   interview_review: '面试复盘',
-};
-export const statusLabels = {
-  planned: '想投递',
-  applied: '已投递',
-  interview: '面试中',
-  offer: 'Offer',
-  closed: '已结束',
 };

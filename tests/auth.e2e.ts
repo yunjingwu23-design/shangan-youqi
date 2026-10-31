@@ -74,12 +74,12 @@ test('desktop: official logo, real OTP, persisted workspace, profile, restored s
     .getByRole('link', { name: '求职工作台', exact: true })
     .click();
   await restored.getByRole('button', { name: '编辑 浏览器测试 · 产品经理' }).click();
-  await restored.getByRole('combobox', { name: '状态', exact: true }).selectOption('interview');
+  await restored.getByRole('combobox', { name: '状态', exact: true }).selectOption('interview_1');
   await restored.getByRole('button', { name: '保存记录', exact: true }).click();
   await expect(
     restored
       .getByRole('region', { name: '投递记录', exact: true })
-      .getByText('面试中', { exact: true })
+      .getByText('一面', { exact: true })
   ).toBeVisible();
   await restored.screenshot({ path: 'test-results/workspace-desktop.png', fullPage: true });
   await restored.getByRole('button', { name: '退出登录', exact: true }).click();

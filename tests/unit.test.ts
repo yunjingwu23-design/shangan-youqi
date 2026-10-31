@@ -14,6 +14,7 @@ import {
 } from '../lib/navigation';
 import { exampleJobs, filterJobs, catalogJobSchema } from '../lib/catalog';
 import { emptyResume, readResume, resumeSaveSchema } from '../lib/resume';
+import { applicationStatusValues, statusLabels } from '../lib/application-status';
 import {
   emailSchema,
   otpVerifySchema,
@@ -24,6 +25,46 @@ import {
 test('email is normalized and invalid addresses rejected', () => {
   assert.equal(emailSchema.parse('  Alice@Example.com '), 'alice@example.com');
   assert.equal(emailSchema.safeParse('not-email').success, false);
+});
+test('application stages follow the requested order, while old interview and closed records remain valid', () => {
+  assert.deepEqual(
+    applicationStatusValues.map((value) => statusLabels[value]),
+    [
+      '未投递',
+      '已投递',
+      '测评',
+      'AI 面',
+      '一面',
+      '二面',
+      '三面',
+      '四面',
+      '五面',
+      '口头 OC',
+      '已 Offer',
+    ]
+  );
+  for (const status of [...applicationStatusValues, 'interview', 'closed'])
+    assert.equal(
+      entrySchema.parse({ kind: 'application', title: '真实投递', status }).status,
+      status
+    );
+  for (const status of ['interview_6', 'fake_offer', '', null])
+    assert.equal(
+      entrySchema.safeParse({ kind: 'application', title: '真实投递', status }).success,
+      false
+    );
+});
+test('stage-only and note-only patches never inject defaults for omitted fields', () => {
+  const id = 'c0000000-0000-4000-8000-000000000001';
+  assert.deepEqual(entryPatchSchema.parse({ id, status: 'interview_2' }), {
+    id,
+    status: 'interview_2',
+  });
+  assert.deepEqual(entryPatchSchema.parse({ id, company: '只改公司' }), {
+    id,
+    company: '只改公司',
+  });
+  assert.deepEqual(entryPatchSchema.parse({ id, content: '' }), { id, content: '' });
 });
 test('login return paths allow site modules and reject external or looping destinations', () => {
   for (const path of ['/resume', '/mock', '/jobs/example?from=home', '/workspace/interviews', '/'])
