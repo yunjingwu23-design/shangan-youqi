@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, LoaderCircle, Mail, MessageCircle, ChevronLeft } from 'lucide-react';
 import { OTP_INPUT_PATTERN, OTP_MIN_LENGTH, OTP_MAX_LENGTH } from '@/lib/otp';
-export function LoginForm() {
+export function LoginForm({ nextPath = '/workspace' }: { nextPath?: string }) {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [token, setToken] = useState('');
@@ -62,7 +62,7 @@ export function LoginForm() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      router.replace('/workspace');
+      router.replace(nextPath);
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : '网络连接失败，请重试。');
@@ -156,7 +156,9 @@ export function LoginForm() {
                 ? cooldown > 0
                   ? `${cooldown} 秒后重试`
                   : '获取邮箱验证码'
-                : '验证并进入工作台'}
+                : nextPath === '/workspace'
+                  ? '验证并进入工作台'
+                  : '验证并继续'}
               <ArrowRight size={18} />
             </>
           )}

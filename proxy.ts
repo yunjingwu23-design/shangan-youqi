@@ -24,4 +24,17 @@ export async function proxy(request: NextRequest) {
   response.headers.set('Cache-Control', 'private, no-store');
   return response;
 }
-export const config = { matcher: ['/login', '/workspace/:path*', '/api/:path*'] };
+export const config = {
+  matcher: [
+    '/',
+    '/login',
+    '/jobs/:path*',
+    '/interviews/:path*',
+    '/resume/:path*',
+    '/review',
+    '/mock',
+    '/admin/:path*',
+    '/workspace/:path*',
+    '/api/:path*',
+  ],
+};

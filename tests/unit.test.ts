@@ -5,6 +5,9 @@ import {
 } from '../lib/auth-diagnostics';
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { safeReturnPath } from '../lib/navigation';
+import { exampleJobs, filterJobs, catalogJobSchema } from '../lib/catalog';
+import { emptyResume, readResume, resumeSaveSchema } from '../lib/resume';
 import {
   emailSchema,
   otpVerifySchema,
@@ -15,6 +18,71 @@ import {
 test('email is normalized and invalid addresses rejected', () => {
   assert.equal(emailSchema.parse('  Alice@Example.com '), 'alice@example.com');
   assert.equal(emailSchema.safeParse('not-email').success, false);
+});
+test('login return paths allow site modules and reject external or looping destinations', () => {
+  for (const path of ['/resume', '/mock', '/jobs/example?from=home', '/workspace/interviews', '/'])
+    assert.equal(safeReturnPath(path), path);
+  for (const path of [
+    undefined,
+    'https://outside.invalid',
+    '//outside.invalid',
+    '/\\outside.invalid',
+    '/login',
+    '/api/account',
+    '/\nexternal',
+  ])
+    assert.equal(safeReturnPath(path), '/workspace');
+});
+test('job search expands only recorded aliases and preserves exact and combined filters', () => {
+  assert.equal(filterJobs(exampleJobs, { q: 'CICC', mode: 'fuzzy' })[0].company, '中金公司');
+  assert.equal(filterJobs(exampleJobs, { q: 'CICC', mode: 'exact' }).length, 0);
+  assert.equal(
+    filterJobs(exampleJobs, {
+      q: '财务分析',
+      mode: 'fuzzy',
+      city: '深圳',
+      type: 'autumn_recruitment',
+    }).length,
+    1
+  );
+  assert.equal(filterJobs(exampleJobs, { q: '不存在的企业' }).length, 0);
+});
+test('publication requires a source and conversion claims require evidence', () => {
+  const { id, verified_at, published_at, updated_at, preview, ...input } = exampleJobs[1];
+  assert.equal(catalogJobSchema.safeParse({ ...input, state: 'published' }).success, false);
+  assert.equal(
+    catalogJobSchema.safeParse({
+      ...input,
+      state: 'published',
+      source_url: 'https://example.com/source',
+    }).success,
+    false
+  );
+  assert.equal(
+    catalogJobSchema.safeParse({
+      ...input,
+      state: 'published',
+      source_url: 'https://example.com/source',
+      retention_evidence: '招聘方原文示例：有留用可能',
+    }).success,
+    true
+  );
+});
+test('legacy resume text is preserved on read and user ownership cannot be submitted', () => {
+  const text = '原有真实经历。'.repeat(1200);
+  const parsed = readResume(text, crypto.randomUUID());
+  assert.equal(parsed.legacy, true);
+  assert.equal(parsed.document.sections.map((s) => s.body).join(''), text);
+  const document = emptyResume('测试求职者', 'candidate@example.com');
+  assert.equal(
+    resumeSaveSchema.safeParse({
+      title: '测试简历',
+      company: '',
+      document,
+      user_id: crypto.randomUUID(),
+    }).success,
+    false
+  );
 });
 test('OTP accepts complete 6–10 digit codes, including eight digits and leading zeroes', () => {
   for (const token of [

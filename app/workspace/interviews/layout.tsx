@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { actor, ApiError } from '@/lib/api';
 import { Brand } from '@/components/brand';
+import { SiteLinks } from '@/components/site-navigation';
 import './interviews.css';
 export const dynamic = 'force-dynamic';
 export default async function InterviewLayout({ children }: { children: React.ReactNode }) {
@@ -15,6 +16,7 @@ export default async function InterviewLayout({ children }: { children: React.Re
     <div className="interview-shell">
       <header className="interview-header">
         <Brand />
+        <SiteLinks compact />
         <nav>
           <Link href="/workspace">求职工作台</Link>
           <Link href="/workspace/interviews">复盘记录</Link>

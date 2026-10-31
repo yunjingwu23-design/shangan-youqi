@@ -12,6 +12,7 @@
     "test:e2e": "playwright test",
     "worker:interviews": "node --import tsx scripts/interview-worker.ts",
     "test:interviews": "node --import tsx --test --test-concurrency=1 tests/interviews.test.ts",
+    "test:site": "node --import tsx --test --test-concurrency=1 tests/site.test.ts",
     "db:start": "node scripts/local.mjs start",
     "db:stop": "node scripts/local.mjs stop",
     "format": "prettier --write .",

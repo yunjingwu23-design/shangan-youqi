@@ -1,21 +1,29 @@
 import { redirect } from 'next/navigation';
+import { safeReturnPath } from '@/lib/navigation';
+import { SiteLinks } from '@/components/site-navigation';
 import { serverSupabase } from '@/lib/supabase/server';
 import { LoginForm } from '@/components/login-form';
 import { Brand } from '@/components/brand';
 import { ArrowUpRight, Check, Layers3, LockKeyhole, MoveUpRight } from 'lucide-react';
 export const dynamic = 'force-dynamic';
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  const nextPath = safeReturnPath((await searchParams).next);
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     const db = await serverSupabase();
     const {
       data: { user },
     } = await db.auth.getUser();
-    if (user) redirect('/workspace');
+    if (user) redirect(nextPath);
   }
   return (
     <div className="login-shell">
       <header className="login-header">
         <Brand />
+        <SiteLinks compact />
         <span className="header-note">
           每一步，都算数。
           <ArrowUpRight size={15} />
@@ -78,7 +86,7 @@ export default async function LoginPage() {
             <div className="panel-eyebrow">WELCOME TO YOUR WORKSPACE</div>
             <h2>下一站，从这里开始</h2>
             <p className="form-description">登录上岸有期，继续你的求职旅程。</p>
-            <LoginForm />
+            <LoginForm nextPath={nextPath} />
             <div className="privacy-note">
               <LockKeyhole size={15} />
               <span>个人资料与求职记录，仅对你自己可见。</span>

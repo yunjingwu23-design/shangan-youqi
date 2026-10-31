@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { SiteLinks } from '@/components/site-navigation';
+import { entryPresentation } from '@/lib/entry-presentation';
 import { Brand } from '@/components/brand';
 import { type Entry, type Profile, kindLabels, statusLabels } from '@/lib/validation';
 import {
@@ -135,6 +137,13 @@ export function Workspace({
     }
   }
   function openEditor(entry?: Entry) {
+    if (entry) {
+      const destination = entryPresentation(entry).editor;
+      if (destination) {
+        router.push(destination);
+        return;
+      }
+    }
     setDraft(
       entry
         ? {
@@ -176,6 +185,12 @@ export function Workspace({
     <div className="workspace-shell">
       <aside className="sidebar">
         <Brand />
+        <div className="workspace-site-shortcuts">
+          <Link href="/">返回首页</Link>
+          <Link href="/jobs">岗位广场</Link>
+          <Link href="/resume">简历编辑</Link>
+          <Link href="/mock">模拟面试</Link>
+        </div>
         <div className="sidebar-heading">我的空间</div>
         <button
           className={`nav-item ${!settings && kind === 'application' ? 'active' : ''}`}
@@ -242,9 +257,7 @@ export function Workspace({
       </aside>
       <div className="workspace-main">
         <header className="workspace-header">
-          <span>
-            我的空间 <ChevronRight size={14} /> {settings ? '账号与资料' : kindLabels[kind]}
-          </span>
+          <SiteLinks compact />
           <div className="user-chip">
             <span className="avatar">{name.charAt(0)}</span>
             <span>{name}</span>
@@ -267,7 +280,7 @@ export function Workspace({
                   : kind === 'application'
                     ? '把每一个机会，变成有迹可循的进步。'
                     : kind === 'resume'
-                      ? '先记录真实经历。智能解析与 AI 优化将在后续开放。'
+                      ? '保留你的文字草稿，或从简历编辑工作室继续分块编辑与导出。'
                       : kind === 'interview_review'
                         ? '记录问题、回答与收获。AI 分析将在后续开放。'
                         : '把值得关注的机会与资料，留在自己的空间。'}
@@ -289,6 +302,13 @@ export function Workspace({
             <div className="alert success" role="status">
               <Check size={16} />
               {notice}
+            </div>
+          )}
+          {!settings && kind === 'resume' && (
+            <div className="workspace-module-link">
+              <Link href="/resume" className="button secondary">
+                打开简历编辑工作室 <ArrowUpRight size={16} />
+              </Link>
             </div>
           )}
           {settings ? (
@@ -480,7 +500,7 @@ export function Workspace({
                               </td>
                               <td>
                                 <span className="entry-content">
-                                  {entry.content || '还没有备注'}
+                                  {entryPresentation(entry).summary || '还没有备注'}
                                 </span>
                               </td>
                               <td>
