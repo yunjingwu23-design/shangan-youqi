@@ -244,6 +244,56 @@ test('real original resumes: private upload, native editing, versioning and dele
     }
   );
   await t.test(
+    'Word date layout and character formatting persist through owner-only save, reload and native download',
+    async () => {
+      const formatSource = readFileSync('tests/fixtures/resume-format.docx'),
+        created = await upload(a, '日期排版.docx', formatSource);
+      assert.equal(created.response.status, 201);
+      const id = created.data.resume.id,
+        parts = wordBlocks(formatSource),
+        company = parts.find((block) => block.text === '某公司｜产品实习生')!,
+        date = parts.find((block) => block.text === '2025.06–2025.09')!,
+        target = company.word!.paragraph.rightTab! - 72 / 25.4,
+        changes = [
+          { key: company.key, text: company.text, paragraph: { rightTab: target } },
+          { key: date.key, text: date.text, fontSize: 12, baseline: 0.5 },
+        ];
+      const saved = await a.request(`/api/resumes/${id}/original`, 'PUT', {
+        title: '日期已左移',
+        expectedUpdatedAt: created.data.resume.updated_at,
+        edits: changes,
+      });
+      assert.equal(saved.response.status, 200, JSON.stringify(saved.data));
+      assert.deepEqual(
+        (await a.request('/api/resumes?id=' + id)).data.resume.original.edits,
+        changes
+      );
+      const output = await fetch(base + `/api/resumes/${id}/file`, {
+        method: 'POST',
+        headers: { Cookie: cookie(a), Origin: base, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ edits: changes }),
+      });
+      assert.equal(output.status, 200);
+      const result = wordBlocks(new Uint8Array(await output.arrayBuffer())).find(
+        (block) => block.text === date.text
+      )!;
+      assert.ok(Math.abs(result.word!.paragraph.rightTab! - target) < 0.03);
+      assert.equal(result.word!.fontSize, 12);
+      assert.equal(result.word!.baseline, 0.5);
+      assert.deepEqual(Buffer.from(await (await raw(a, id)).arrayBuffer()), formatSource);
+      assert.equal(
+        (
+          await b.request(`/api/resumes/${id}/original`, 'PUT', {
+            title: 'forged',
+            expectedUpdatedAt: saved.data.resume.updated_at,
+            edits: changes,
+          })
+        ).response.status,
+        404
+      );
+    }
+  );
+  await t.test(
     'cloning retains current edits but deleting one version removes only its own original',
     async () => {
       const clone = await a.request(`/api/resumes/${wordId}/original`, 'POST', {

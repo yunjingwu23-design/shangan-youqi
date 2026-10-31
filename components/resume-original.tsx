@@ -4,7 +4,10 @@ import { Upload, Download, Save, Copy, Trash2, ArrowLeft, ArrowRight } from 'luc
 import { useDraftStorage } from '@/components/drafts';
 import type { OriginalResume, FileBlock, FileEdit } from '@/lib/resume-files/model';
 import { MAX_RESUME_BYTES } from '@/lib/resume-files/model';
-import { editWord, wordBlocks } from '@/lib/resume-files/word';
+import { wordBlocks } from '@/lib/resume-files/word';
+import { fileLines } from '@/lib/resume-files/search';
+import { renderWordPreview } from '@/lib/resume-files/word-preview';
+import { WordParagraphControls } from '@/components/resume-word-format';
 export type ResumeSummary = {
   id: string;
   title: string;
@@ -181,11 +184,20 @@ export function OriginalResumeEditor({
     [loading, setLoading] = useState(true),
     [error, setError] = useState(''),
     [notice, setNotice] = useState('');
+  const [previewState, setPreviewState] = useState<'pending' | 'loading' | 'ready' | 'error'>(
+      'pending'
+    ),
+    [previewError, setPreviewError] = useState(''),
+    [previewed, setPreviewed] = useState('');
   const worker = useRef<Rpc | null>(null),
     canvas = useRef<HTMLCanvasElement | null>(null),
     frame = useRef<HTMLIFrameElement | null>(null),
+    lineList = useRef<HTMLDivElement | null>(null),
+    previewPanel = useRef<HTMLElement | null>(null),
     alive = useRef(true),
-    renderSequence = useRef(0);
+    renderSequence = useRef(0),
+    previewQueue = useRef(Promise.resolve()),
+    debounce = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const local = useDraftStorage<{ title: string; edits: FileEdit[]; updatedAt: string }>(
     `resume-original:${entry.id}`
   );
@@ -236,70 +248,81 @@ export function OriginalResumeEditor({
       worker.current?.close();
     };
   }, [entry.id]);
-  async function preview() {
+  function preview(manual = false) {
     if (!source) return;
-    const sequence = ++renderSequence.current;
-    setError('');
-    try {
-      if (entry.original.fileType === 'pdf') {
-        if (!worker.current) return;
-        const image = await worker.current.call('render', { page, edits });
-        if (sequence !== renderSequence.current || !alive.current) return;
-        const element = canvas.current;
-        if (element) {
-          element.width = image.width;
-          element.height = image.height;
-          element
-            .getContext('2d')!
-            .putImageData(
-              new ImageData(new Uint8ClampedArray(image.pixels), image.width, image.height),
-              0,
-              0
-            );
+    clearTimeout(debounce.current);
+    const sequence = ++renderSequence.current,
+      snapshot = edits.map((edit) => ({
+        ...edit,
+        ...(edit.paragraph ? { paragraph: { ...edit.paragraph } } : {}),
+      })),
+      targetPage = page,
+      signature = JSON.stringify({ page: targetPage, edits: snapshot }),
+      current = () => sequence === renderSequence.current && alive.current;
+    setPreviewState('loading');
+    setPreviewError('');
+    previewQueue.current = previewQueue.current
+      .catch(() => {})
+      .then(async () => {
+        if (!current()) return;
+        if (entry.original.fileType === 'pdf') {
+          if (!worker.current) return;
+          const image = await worker.current.call('render', { page: targetPage, edits: snapshot });
+          if (!current()) return;
+          const element = canvas.current;
+          if (element) {
+            element.width = image.width;
+            element.height = image.height;
+            element
+              .getContext('2d')!
+              .putImageData(
+                new ImageData(new Uint8ClampedArray(image.pixels), image.width, image.height),
+                0,
+                0
+              );
+          }
+        } else {
+          const target = frame.current;
+          if (!target) return;
+          if (!(await renderWordPreview(target, source, snapshot, current))) return;
         }
-      } else {
-        const target = frame.current;
-        if (!target) return;
-        target.srcdoc =
-          '<!doctype html><html><head><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src blob: data:; font-src blob: data:; style-src \'unsafe-inline\';"><style>body{margin:0;background:#f4f5f1}.docx-wrapper{padding:14px!important}section.docx{margin:0 auto 16px!important;box-shadow:none!important}@media print{.docx-wrapper{padding:0!important;background:white!important}section.docx{margin:0!important;box-shadow:none!important}}</style></head><body><div id="docx"></div></body></html>';
-        await new Promise<void>((resolve) => {
-          target.onload = () => resolve();
-        });
-        if (sequence !== renderSequence.current || !alive.current) return;
-        const doc = target.contentDocument;
-        if (!doc) return;
-        const { renderAsync } = await import('docx-preview');
-        await renderAsync(
-          new Uint8Array(editWord(source, edits)).buffer,
-          doc.getElementById('docx')!,
-          undefined,
-          {
-            ignoreLastRenderedPageBreak: false,
-            inExperimentalMode: false,
-            renderHeaders: true,
-            renderFooters: true,
-            renderFootnotes: true,
-            useBase64URL: true,
-          } as Parameters<typeof renderAsync>[3]
-        );
-        for (const link of Array.from(doc.querySelectorAll('a'))) link.removeAttribute('href');
-        for (const section of Array.from(doc.querySelectorAll<HTMLElement>('section.docx')))
-          section.style.setProperty('zoom', String(Math.min(1, (target.clientWidth - 28) / 816)));
-      }
-    } catch (error) {
-      if (alive.current) setError(error instanceof Error ? error.message : '预览失败。');
-    }
+        if (!current()) return;
+        setPreviewed(signature);
+        setPreviewState('ready');
+        if (manual) previewPanel.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      })
+      .catch((error) => {
+        if (!current()) return;
+        setPreviewState('error');
+        setPreviewError(error instanceof Error ? error.message : '预览失败，请重试。');
+      });
   }
   useEffect(() => {
-    if (!loading && source) void preview();
-  }, [source, loading, page]);
-  function change(key: string, text: string) {
-    setEdits((old) => [
-      ...old.filter((item) => item.key !== key),
-      ...(text === blocks.find((block) => block.key === key)?.text ? [] : [{ key, text }]),
-    ]);
+    ++renderSequence.current;
+    if (!loading && source) {
+      setPreviewState('pending');
+      debounce.current = setTimeout(() => preview(), 400);
+    }
+    return () => clearTimeout(debounce.current);
+  }, [source, loading, page, edits]);
+  function update(key: string, patch: Partial<FileEdit>) {
+    ++renderSequence.current;
+    setEdits((old) => {
+      const block = blocks.find((block) => block.key === key);
+      if (!block) return old;
+      const changed = { key, text: block.text, ...old.find((edit) => edit.key === key), ...patch },
+        needed =
+          changed.text !== block.text ||
+          changed.fontSize !== undefined ||
+          changed.baseline !== undefined ||
+          changed.paragraph !== undefined;
+      return [...old.filter((item) => item.key !== key), ...(needed ? [changed] : [])];
+    });
     setDirty(true);
     setNotice('');
+  }
+  function change(key: string, text: string) {
+    update(key, { text });
   }
   async function save() {
     setBusy(true);
@@ -377,11 +400,23 @@ export function OriginalResumeEditor({
       setBusy(false);
     }
   }
-  const visible = blocks.filter(
-    (block) =>
-      (block.page === undefined || block.page === page) &&
-      (!filter || block.text.toLowerCase().includes(filter.toLowerCase()))
-  );
+  const lines = fileLines(
+      blocks,
+      edits,
+      filter,
+      entry.original.fileType === 'pdf' ? page : undefined
+    ),
+    previewMatches = previewed === JSON.stringify({ page, edits }),
+    previewLabel =
+      previewState === 'error'
+        ? '预览更新失败'
+        : previewState === 'loading'
+          ? '正在更新预览…'
+          : !previewMatches
+            ? '有修改，等待更新预览…'
+            : dirty
+              ? '预览已更新 · 尚未保存'
+              : '预览已更新';
   return (
     <main className="site-main resume-page resume-original-page">
       <div className="site-page-title resume-toolbar">
@@ -456,7 +491,7 @@ export function OriginalResumeEditor({
       </div>
       <div className="resume-file-description">
         {entry.original.fileType === 'docx'
-          ? '按文字片段修改，原 Word 的样式、表格、图片及页面设置保留。浏览器预览与 Word 可能有字体或分页差异，正式提交前请在 Word 中复核。'
+          ? '按完整段落检索，保留原文字片段的样式。可调整段落对齐、缩进、行距和日期制表位；修改会自动更新预览。浏览器与 Word 的字体和分页仍可能有差异，正式提交前请在 Word 中复核。'
           : '文字型 PDF 按原位置替换，其他页面元素保留。修改文字使用兼容字体，不自动扩行，请控制文字长度并更新预览。扫描件、签名或受限制的文件只提供原件预览。'}
       </div>
       {error && (
@@ -477,33 +512,147 @@ export function OriginalResumeEditor({
               <h2>原模板文字</h2>
               <input
                 aria-label="搜索原件文字"
-                placeholder="搜索要修改的原文"
+                placeholder="按完整行 / 段落搜索，也支持修改后的文字"
                 value={filter}
-                onChange={(event) => setFilter(event.target.value)}
+                onChange={(event) => {
+                  const card = event.currentTarget.closest('.site-card');
+                  setFilter(event.target.value);
+                  lineList.current?.scrollTo(0, 0);
+                  // Run after the browser's caret scroll, so the complete result
+                  // appears below the search field instead of below the screen.
+                  requestAnimationFrame(() => {
+                    if (!card?.isConnected) return;
+                    const top = card.getBoundingClientRect().top;
+                    if (top < 95 || top > 200)
+                      card.scrollIntoView({ block: 'start', behavior: 'instant' });
+                  });
+                }}
               />
               <p className="ia-draft-note">
-                编辑后点击「更新预览」检查排版；保存后可跨设备继续编辑。
+                命中前几个字后，会展示完整段落及其中所有文字。修改后自动预览，保存后跨设备同步。
               </p>
+              <div className="resume-preview-actions">
+                <button
+                  className="button secondary"
+                  disabled={busy || loading}
+                  onClick={() => preview(true)}
+                >
+                  更新预览
+                </button>
+                <span aria-live="polite">
+                  {previewState === 'loading'
+                    ? '正在计算排版…'
+                    : previewState === 'error'
+                      ? '请查看右侧错误说明'
+                      : '自动预览已开启'}
+                </span>
+              </div>
               {!editable && <p className="site-notice">文件包含签名或编辑限制，当前只读。</p>}
               {!blocks.length && (
                 <p>没有可直接编辑的文字，原文件仍可预览和下载。扫描件需提供可编辑 DOCX 原件。</p>
               )}
-              {visible.map((block) => (
-                <label className="resume-file-block" key={block.key}>
-                  {block.label}
-                  <textarea
-                    aria-label={block.label}
-                    value={edits.find((edit) => edit.key === block.key)?.text ?? block.text}
-                    maxLength={5000}
-                    rows={Math.min(5, Math.max(2, Math.ceil(block.text.length / 50)))}
-                    disabled={!editable || busy}
-                    onChange={(event) => change(block.key, event.target.value)}
-                  />
-                </label>
-              ))}
-              <button className="button secondary" disabled={busy} onClick={() => void preview()}>
-                更新预览
-              </button>
+              {!!blocks.length && (
+                <p className="resume-search-count">
+                  {filter ? `找到 ${lines.length} 个完整段落 / 行` : `${lines.length} 个段落 / 行`}
+                </p>
+              )}
+              {!!blocks.length && !lines.length && (
+                <p className="site-notice">没有匹配内容。可缩短关键词，或清空搜索查看全部段落。</p>
+              )}
+              <div className="resume-file-lines" ref={lineList}>
+                {lines.map((line) => (
+                  <article className="resume-line-group" key={line.key}>
+                    <div className="resume-line-context">
+                      <small>完整行 / 段落</small>
+                      <p>{line.text}</p>
+                    </div>
+                    <WordParagraphControls
+                      block={line.blocks[0]}
+                      edit={edits.find((edit) => edit.key === line.blocks[0].key)}
+                      disabled={!editable || busy}
+                      onChange={(paragraph) => update(line.blocks[0].key, { paragraph })}
+                      onReset={() => {
+                        for (const block of line.blocks)
+                          if (edits.find((edit) => edit.key === block.key)?.paragraph)
+                            update(block.key, { paragraph: undefined });
+                      }}
+                    />
+                    {line.blocks.map((block) => (
+                      <div className="resume-file-block" key={block.key}>
+                        <label>
+                          {block.label}
+                          <textarea
+                            aria-label={block.label}
+                            value={edits.find((edit) => edit.key === block.key)?.text ?? block.text}
+                            maxLength={5000}
+                            rows={Math.min(5, Math.max(2, Math.ceil(block.text.length / 50)))}
+                            disabled={!editable || busy}
+                            onFocus={() => {
+                              if (block.page !== undefined && block.page !== page)
+                                setPage(block.page);
+                            }}
+                            onChange={(event) => change(block.key, event.target.value)}
+                          />
+                        </label>
+                        {block.word && (
+                          <details className="resume-word-text-format">
+                            <summary>字号 / 文字上下位置</summary>
+                            <div className="resume-format-grid">
+                              <label>
+                                字号（pt）
+                                <input
+                                  aria-label={`${block.label} 字号`}
+                                  type="number"
+                                  min="6"
+                                  max="72"
+                                  step="0.5"
+                                  disabled={!editable || busy}
+                                  value={
+                                    edits.find((edit) => edit.key === block.key)?.fontSize ??
+                                    block.word.fontSize
+                                  }
+                                  onChange={(event) => {
+                                    if (event.target.value !== '' && event.target.validity.valid)
+                                      update(block.key, { fontSize: Number(event.target.value) });
+                                  }}
+                                />
+                              </label>
+                              <label>
+                                上移量（pt，负数为下移）
+                                <input
+                                  aria-label={`${block.label} 上移量`}
+                                  type="number"
+                                  min="-36"
+                                  max="36"
+                                  step="0.5"
+                                  disabled={!editable || busy}
+                                  value={
+                                    edits.find((edit) => edit.key === block.key)?.baseline ??
+                                    block.word.baseline
+                                  }
+                                  onChange={(event) => {
+                                    if (event.target.value !== '' && event.target.validity.valid)
+                                      update(block.key, { baseline: Number(event.target.value) });
+                                  }}
+                                />
+                              </label>
+                            </div>
+                            <button
+                              type="button"
+                              disabled={busy || !editable}
+                              onClick={() =>
+                                update(block.key, { fontSize: undefined, baseline: undefined })
+                              }
+                            >
+                              还原这段文字格式
+                            </button>
+                          </details>
+                        )}
+                      </div>
+                    ))}
+                  </article>
+                ))}
+              </div>
             </div>
             <section className="site-card">
               <h3>另选站内模板</h3>
@@ -523,10 +672,8 @@ export function OriginalResumeEditor({
                 onClick={() => {
                   setBusy(true);
                   void onCopyToTemplate(
-                    blocks
-                      .map(
-                        (block) => edits.find((edit) => edit.key === block.key)?.text ?? block.text
-                      )
+                    fileLines(blocks, edits)
+                      .map((line) => line.text)
                       .join('\n'),
                     template
                   )
@@ -538,7 +685,7 @@ export function OriginalResumeEditor({
               </button>
             </section>
           </section>
-          <section className="resume-file-preview" aria-label="原版简历预览">
+          <section className="resume-file-preview" aria-label="原版简历预览" ref={previewPanel}>
             <div className="resume-preview-label">
               <strong>原文件版式预览</strong>
               {entry.original.fileType === 'pdf' && (
@@ -559,6 +706,14 @@ export function OriginalResumeEditor({
                     <ArrowRight size={15} />
                   </button>
                 </span>
+              )}
+            </div>
+            <div className={`resume-preview-feedback ${previewState === 'error' ? 'failed' : ''}`}>
+              <span aria-live="polite" data-testid="resume-preview-state">
+                {previewLabel}
+              </span>
+              {previewError && (
+                <p role="alert">{previewError} 上一次成功的预览仍保留；你的修改尚未丢失。</p>
               )}
             </div>
             {entry.original.fileType === 'pdf' ? (

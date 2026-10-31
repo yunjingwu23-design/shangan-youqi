@@ -32,6 +32,8 @@
 
 原文件使用私有桶及由服务器生成的内部 ID 路径。所有下载/导出先通过用户会话与原行级权限，服务端再读文件并核对 SHA-256；不向前端暴露服务端 key 或公开文件 URL。原版元数据不能通过通用记录接口覆盖，专用保存接口保留类型和原件哈希，并检查并发版本。可选的限制性 Storage 策略保证即使日后存在宽泛允许策略，anon/authenticated 也不能直接操作此桶。
 
+Word 排版字段只接受有上下限的数值和固定对齐枚举，不接受任意 HTML/CSS；新增格式继续与本人记录及原件绑定，旧版文字键保持兼容。预览在固定 sandbox iframe 中暂存新结果，成功后替换；制表位启用实际支持的渲染选项，HTML altChunk 不参与预览，链接仍移除。
+
 上传流式限制为 3 MiB，DOCX 在展开前核查目录，并对实际展开流限制条目数及总大小；不提取到服务器文件系统。禁止宏和 XML DTD/ENTITY，Word 预览在无脚本 sandbox iframe 内，阻止外部资源并移除预览链接。PDFium 在有超时终止的浏览器 Worker 中处理，CSP 允许本站 WASM、Worker 和 blob 图片/字体，不增加生产环境 JavaScript `unsafe-eval`。浏览器预览不构成安全的通用文档沙箱或完整 Office 转换服务，支持边界见 [RESUME_FILES.md](RESUME_FILES.md)。
 
 ## 微信 OAuth 第二阶段（尚未实现）

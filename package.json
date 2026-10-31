@@ -17,7 +17,8 @@
     "db:stop": "node scripts/local.mjs stop",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:resume-files": "node --import tsx --test --test-concurrency=1 tests/resume-files.test.ts"
+    "test:resume-files": "node --import tsx --test --test-concurrency=1 tests/resume-files.test.ts",
+    "test:resume-layout": "node --import tsx --test tests/resume-layout.test.ts"
   },
   "dependencies": {
     "@embedpdf/pdfium": "2.15.1",
