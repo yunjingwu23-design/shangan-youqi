@@ -90,6 +90,8 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
                     href={job.apply_url}
                     target="_blank"
                     rel="noopener noreferrer"
+                    data-analytics-event="application_link_click"
+                    data-analytics-job={job.id}
                   >
                     前往招聘方投递 ↗
                   </a>

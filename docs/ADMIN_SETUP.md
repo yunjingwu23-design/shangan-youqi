@@ -10,7 +10,13 @@
 2. 打开 [此项目 SQL Editor](https://supabase.com/dashboard/project/lxecahdyvrdfezgtmbfp/sql/new)，**新建查询**，粘贴全部代码，确认角色为 `postgres`，不要只选中某一行，点击 Run。整份脚本作为一个事务执行，失败全部回滚；重复运行保留原用户 ID、个人记录、岗位、审核与现有角色，不会重置已初始化的超级管理员。
 3. 脚本内已包含为 `876901712@qq.com` 首次初始化的操作。该邮箱必须已在网站完成真实验证码登录。成功后最后结果中的六列 `jobs_ok`、`admin_table_ok`、`bootstrap_ok`、`workflow_ok`、`private_bucket_ok`、`owner_admin_ok` 应全部为 `true`，**无需再单独运行初始化命令**。若已有其他超级管理员，脚本保留该管理员并让 `owner_admin_ok` 反映实际情况，应由现有超级管理员邀请该邮箱。
 
-合并脚本由已审阅的 `202610310003_public_catalog.sql` 和 `202610310005_admin_workflow.sql` 生成，前置账号体系必须存在。完成后不要再手工重跑这两份历史迁移，不要 reset 数据库。已通过 CLI 管理迁移账本的项目继续使用原迁移链；合并入口不写入或伪造托管迁移账本。
+合并脚本由已审阅的岗位目录、后台、工作台阶段和管理员 OTP 迁移生成，前置账号体系必须存在。完成后不要再手工重跑历史迁移，不要 reset 数据库。已通过 CLI 管理迁移账本的项目继续使用原迁移链；合并入口不写入或伪造托管迁移账本。
+
+已有后台取消「15 分钟内 OTP」限制时，只需应用增量迁移 [`202611010001_admin_otp_without_time_limit.sql`](../supabase/migrations/202611010001_admin_otp_without_time_limit.sql)，不必重新初始化管理员。它仅替换现有鉴权辅助函数，不修改用户、岗位、角色、邀请或审计记录，可重复执行。CLI 管理的项目走原迁移流程；SQL Editor 管理的项目由项目所有者以 `postgres` 执行该文件全部内容。合并安装脚本也已包含此更新，重复运行不会恢复旧时间窗。
+
+数据库迁移与应用代码都需部署；只更新网页或错误提示不能取消数据库限制。邮箱 OTP 登录、正常会话过期、启用的超级管理员角色、邀请的 48 小时有效期和最后一位超级管理员保护继续生效。
+
+数据分析中心还需应用 `202611010002_site_analytics.sql`，增加真实事件聚合及按会话去重的管理员登录审计；已包含在合并脚本中。分析入口 `/admin/analytics`、指标计算、隐私选择和保留期维护见 [ANALYTICS.md](ANALYTICS.md)。
 
 以下命令保留给已经通过原迁移链安装好后台、但尚未初始化的项目使用，不是缺表修复方法：
 
@@ -20,7 +26,7 @@ select public.bootstrap_site_admin('876901712@qq.com');
 
 单独初始化成功返回内部 `user_id` 和 `role: super_admin`。若提示 `ADMIN_VERIFIED_ACCOUNT_REQUIRED`，先用该邮箱在网站完成验证码登录，再重试；若提示 `ADMIN_BOOTSTRAPPED`，表示已经初始化，后续通过既有超级管理员邀请，不能反复执行以恢复或提升任意账号。
 
-在 Vercel 确认生产部署为 Ready 后，打开 [正式后台](https://shangan-youqi.vercel.app/admin)，用 `876901712@qq.com` 邮箱 OTP 登录。涉及邀请或角色管理时，须在最近一次邮箱验证的 15 分钟内操作。按下方验收步骤发布自己拥有授权的真实岗位，在 [岗位广场](https://shangan-youqi.vercel.app/jobs) 检查。
+在 Vercel 确认生产部署为 Ready 后，打开 [正式后台](https://shangan-youqi.vercel.app/admin)，用 `876901712@qq.com` 邮箱 OTP 登录。在有效登录会话内可管理邀请和管理员权限，无需因邮箱验证已超过 15 分钟而重新登录。按下方验收步骤发布自己拥有授权的真实岗位，在 [岗位广场](https://shangan-youqi.vercel.app/jobs) 检查。
 
 可选：在可信服务端通过 `npm run admin:bootstrap -- --email 876901712@qq.com` 调用相同的一次性初始化函数。脚本只使用已有服务端环境变量，不提供公开初始化 HTTP 接口。
 
@@ -68,7 +74,7 @@ JD 单文件限制 3 MiB，支持 UTF-8 TXT、DOCX、20 页以内文字型 PDF�
 | `POST /api/admin/jobs/[id]/transition` | 按角色和当前状态提交、撤回、批准、驳回、发布、下架、到期处理或开始修订。                                                 |
 | `POST /api/admin/jd-import?name=...`   | editor/super_admin 实际上传、提取并私有存储 TXT/DOCX/PDF。                                                               |
 | `GET /api/admin/jd-files/[id]`         | 管理员读取已关联原件，未关联原件限上传者/超级管理员；校验大小及 SHA-256。                                                |
-| `GET/POST /api/admin/team`             | super_admin 读团队和邀请记录；创建/撤销邀请，变更角色或启用状态。写入要求 15 分钟内 OTP。                                |
+| `GET/POST /api/admin/team`             | super_admin 读团队和邀请记录；创建/撤销邀请，变更角色或启用状态。写入要求有效邮箱 OTP 会话，不另设 15 分钟时间窗。       |
 | `POST /api/admin/invitations/accept`   | 已认证目标邮箱领取；验证 48 小时有效期、单次使用、原邀请人仍为启用的超级管理员。                                         |
 | `GET /api/admin/logs`                  | 岗位日志三角色可读；系统权限日志仅 super_admin 可读；50 条分页。                                                         |
 

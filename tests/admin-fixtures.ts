@@ -31,6 +31,32 @@ export async function adminFixture(label: string, role?: AdminRole) {
   return { email, client, authId: generated.data.user.id, userId: profile.user_id as string };
 }
 export type AdminFixture = Awaited<ReturnType<typeof adminFixture>>;
+// Simulate an older login only in this local fixture's Auth sessions, then obtain
+// a real Auth-signed token through refresh instead of forging a JWT or waiting.
+export async function ageAdminOtpSession(actor: AdminFixture) {
+  if (!/^[a-f0-9-]{36}$/.test(actor.authId)) throw new Error('Invalid local fixture ID');
+  localAdminSql(`update auth.mfa_amr_claims
+    set created_at=now()-interval '20 minutes',updated_at=now()-interval '20 minutes'
+    where authentication_method='otp'
+      and session_id in (select id from auth.sessions where user_id='${actor.authId}'::uuid);`);
+  const auth = createServerClient(dbUrl, anonKey, {
+    cookies: {
+      getAll: () => [...actor.client.cookies].map(([name, value]) => ({ name, value })),
+      setAll: (items) => {
+        for (const item of items) actor.client.cookies.set(item.name, item.value);
+      },
+    },
+  });
+  const refreshed = await auth.auth.refreshSession();
+  if (refreshed.error || !refreshed.data.session)
+    throw new Error('Local aged OTP session refresh failed');
+  const claims = JSON.parse(
+    Buffer.from(refreshed.data.session.access_token.split('.')[1], 'base64url').toString('utf8')
+  );
+  const otp = claims.amr?.find((claim: { method: string }) => claim.method === 'otp');
+  if (claims.sub !== actor.authId || !otp || otp.timestamp > Date.now() / 1000 - 19 * 60)
+    throw new Error('Local refreshed session must retain an OTP older than fifteen minutes');
+}
 export function localAdminSql(sql: string) {
   if (new URL(dbUrl).hostname !== '127.0.0.1') throw new Error('Local database only');
   const environment = { ...process.env };

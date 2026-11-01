@@ -4,6 +4,7 @@ import { api, actor, ApiError, sameOrigin } from '@/lib/api';
 import { consumeLimit } from '@/lib/rate-limit';
 import { MAX_RESUME_BYTES } from '@/lib/resume-files/model';
 import { createOriginal } from '@/lib/resume-files/server';
+import { recordBusinessEvent } from '@/lib/analytics/server';
 export const runtime = 'nodejs';
 export const POST = api(async (request) => {
   sameOrigin(request, 'application/octet-stream');
@@ -38,6 +39,7 @@ export const POST = api(async (request) => {
     offset += chunk.length;
   }
   const result = await createOriginal(identity, fileName, bytes);
+  await recordBusinessEvent('resume_upload', identity.userId, '/resume');
   return NextResponse.json(
     { resume: { ...result.entry, original: result.original } },
     { status: 201 }

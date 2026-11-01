@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { recordBusinessEvent } from '@/lib/analytics/server';
 import { z } from 'zod';
 import { api, ApiError, readBody } from '@/lib/api';
 import { interviewActor, interviewError, ownInterview } from '@/lib/interviews/server';
@@ -81,6 +82,12 @@ async function handle(request: Request, context: Context) {
       payload,
     });
     interviewError(error);
+    if (request.method === 'POST' && action === 'report')
+      await recordBusinessEvent(
+        'ai_report_request',
+        identity.userId,
+        '/workspace/interviews/:id/report'
+      );
     return NextResponse.json(
       { saved: true },
       {

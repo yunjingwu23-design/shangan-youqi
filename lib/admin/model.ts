@@ -8,6 +8,7 @@ export const adminRoles = {
 export const adminRoleSchema = z.enum(['super_admin', 'editor', 'reviewer']);
 export type AdminRole = z.infer<typeof adminRoleSchema>;
 export const adminActionLabels: Record<string, string> = {
+  admin_login: '管理员登录',
   bootstrap: '初始化超级管理员',
   invite_created: '创建管理员邀请',
   invite_accepted: '领取管理员邀请',

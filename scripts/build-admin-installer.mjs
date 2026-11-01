@@ -27,6 +27,11 @@ let workflow = reusable(
   readFileSync('supabase/migrations/202610310005_admin_workflow.sql', 'utf8')
 );
 const stages = readFileSync('supabase/migrations/202610310006_workspace_stages.sql', 'utf8');
+const adminOtp = readFileSync(
+  'supabase/migrations/202611010001_admin_otp_without_time_limit.sql',
+  'utf8'
+);
+const analytics = readFileSync('supabase/migrations/202611010002_site_analytics.sql', 'utf8');
 workflow = workflow
   .replace(
     'from public.site_managers on conflict do nothing;',
@@ -77,7 +82,13 @@ ${workflow}
 -- 3. 扩展工作台投递阶段，保留旧状态和全部个人记录。
 ${stages}
 
--- 4. 只在未初始化过的项目创建首个超级管理员；不替换已存在的角色。
+-- 4. 取消管理员 OTP 的额外时间窗，保留邮箱登录和角色校验。
+${adminOtp}
+
+-- 5. 第一方聚合统计与管理员登录审计，不迁移私人业务内容。
+${analytics}
+
+-- 6. 只在未初始化过的项目创建首个超级管理员；不替换已存在的角色。
 do $owner_setup$
 begin
   if not exists(select 1 from private.admin_bootstrap_guard)

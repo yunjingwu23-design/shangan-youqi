@@ -21,7 +21,7 @@
 
 ## 服务端行为
 
-- `POST /api/admin/team` 的 `action=invite` 增加 `delivery: "email" | "link"`；网页默认使用 email，旧 API 调用不传此字段时沿用只生成链接。创建和权限检查仍由原用户会话的数据库事务执行，要求超级管理员最近 15 分钟内完成 OTP 验证。
+- `POST /api/admin/team` 的 `action=invite` 增加 `delivery: "email" | "link"`；网页默认使用 email，旧 API 调用不传此字段时沿用只生成链接。创建和权限检查仍由原用户会话的数据库事务执行，要求启用的超级管理员使用有效邮箱 OTP 会话，不再限制 OTP 必须在最近 15 分钟内完成。已有后台须应用 `202611010001_admin_otp_without_time_limit.sql`，详见 [后台升级步骤](ADMIN_SETUP.md)。
 - 邮件使用独立、无持久会话的公开 Supabase Auth 客户端发送，复用现有 SMTP。不会在发起邀请的浏览器写入被邀请人的 Cookie，也不修改目标账号资料或选择角色。
 - 复用邮箱每分钟 1 次、每小时 5 次的发送限制，邀请邮件另按 IP 每小时 30 次，创建邀请仍每位超级管理员每小时 20 次。发信请求最多等待 15 秒。
 - 返回 `delivery.status=sent` 表示 Auth 发信请求已被服务接受，不保证最终收件箱送达；真实送达以 QQ/收件方为准。失败时明确返回 failed，已创建的邀请与备用链接保留，网页不显示发送成功。

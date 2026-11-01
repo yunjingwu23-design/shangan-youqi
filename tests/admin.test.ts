@@ -8,6 +8,7 @@ import {
   adminFixture,
   removeAdminFixtures,
   localAdminSql,
+  ageAdminOtpSession,
   type AdminFixture,
 } from './admin-fixtures';
 import { emptyAdminDraft, adminDraftSchema } from '../lib/admin/model';
@@ -195,12 +196,9 @@ test('P0 real admin roles, private JD files, versioned review and public publica
     }
   );
   await t.test(
-    'permission changes require recent email OTP even through direct database RPC',
+    'permission changes still require email OTP even through direct database RPC',
     async () => {
-      for (const amr of [
-        [],
-        [{ method: 'otp', timestamp: Math.floor(Date.now() / 1000) - 1200 }],
-      ]) {
+      for (const amr of [[], [{ method: 'password', timestamp: Math.floor(Date.now() / 1000) }]]) {
         const claims = JSON.stringify({ sub: root.authId, role: 'authenticated', amr }).replaceAll(
           "'",
           "''"
@@ -209,12 +207,63 @@ test('P0 real admin roles, private JD files, versioned review and public publica
           set local role authenticated;
           select set_config('request.jwt.claims','${claims}',true);
           do $$ begin
-            perform public.admin_create_invitation('expired-reauth@example.com','editor','${'a'.repeat(64)}');
-            raise exception 'STALE_OTP_WAS_ACCEPTED';
+            perform public.admin_create_invitation('missing-otp@example.com','editor','${'a'.repeat(64)}');
+            raise exception 'MISSING_OTP_WAS_ACCEPTED';
           exception when insufficient_privilege then
             if sqlerrm<>'ADMIN_REAUTH' then raise; end if;
           end $$;
           rollback;`);
+      }
+    }
+  );
+  await t.test(
+    'a real refreshed session with an OTP older than fifteen minutes can invite, revoke and manage roles through API and RPC',
+    async () => {
+      // Keep the suite's root login fresh for its separate account-deletion checks.
+      const aged = await adminFixture('older-otp', 'super_admin');
+      try {
+        await ageAdminOtpSession(aged);
+        const made = await aged.client.request('/api/admin/team', 'POST', {
+          action: 'invite',
+          email: 'older-otp-' + Date.now() + '@example.com',
+          role: 'editor',
+        });
+        assert.equal(made.response.status, 201, JSON.stringify(made.data));
+        const revoked = await aged.client.request('/api/admin/team', 'POST', {
+          action: 'revoke',
+          id: made.data.invitation.id,
+        });
+        assert.equal(revoked.response.status, 200, JSON.stringify(revoked.data));
+        assert.equal(
+          (
+            await admin
+              .from('admin_invitations')
+              .select('state')
+              .eq('id', made.data.invitation.id)
+              .single()
+          ).data?.state,
+          'revoked'
+        );
+        const changed = await aged.client.request('/api/admin/team', 'POST', {
+          action: 'change',
+          userId: other.userId,
+          role: 'editor',
+          active: false,
+          reason: '验证旧邮箱登录会话仍可管理管理员权限。',
+        });
+        assert.equal(changed.response.status, 200, JSON.stringify(changed.data));
+        assert.equal((await other.client.request('/api/admin/jobs')).response.status, 403);
+        const database = await aged.client.database();
+        const restored = await database.db.rpc('admin_change_membership', {
+          target_user: other.userId,
+          target_role: 'editor',
+          is_active: true,
+          reason: '恢复本地测试编辑账号，继续验证后台流程。',
+        });
+        assert.ifError(restored.error);
+        assert.equal((await other.client.request('/api/admin/jobs')).response.status, 200);
+      } finally {
+        await removeAdminFixtures([aged]);
       }
     }
   );

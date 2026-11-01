@@ -10,6 +10,7 @@ export function AdminNavigation({ role }: { role: AdminRole }) {
       { href: '/admin/jobs/new', label: '导入 / 新建 JD' },
       { href: '/admin/review', label: '审核工作台' },
       { href: '/admin/logs', label: '操作日志' },
+      { href: '/admin/analytics', label: '数据分析中心' },
       ...(role === 'super_admin' ? [{ href: '/admin/system', label: '管理员账号' }] : []),
     ];
   return (

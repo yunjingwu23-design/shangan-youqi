@@ -68,6 +68,8 @@ export function AdminLogs() {
                 <td>
                   {log.job_id ? (
                     <Link href={'/admin/jobs/' + log.job_id}>查看岗位</Link>
+                  ) : log.action === 'admin_login' ? (
+                    '后台登录'
                   ) : log.action === 'jd_file_registered' ? (
                     'JD 原件'
                   ) : (

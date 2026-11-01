@@ -115,7 +115,13 @@ export function JobsExplorer({
             </div>
             <p className="job-company">{job.company}</p>
             <h2>
-              <Link href={`/jobs/${job.id}`}>{job.title}</Link>
+              <Link
+                href={`/jobs/${job.id}`}
+                data-analytics-event={job.preview ? undefined : 'job_click'}
+                data-analytics-job={job.preview ? undefined : job.id}
+              >
+                {job.title}
+              </Link>
             </h2>
             <p className="muted">
               {job.city} · {job.industry} · {job.cohort || '届别见详情'}
@@ -126,7 +132,12 @@ export function JobsExplorer({
                 : `核验日期 ${new Date(job.verified_at!).toLocaleDateString('zh-CN')}`}
             </small>
             <div className="site-actions">
-              <Link href={`/jobs/${job.id}`} className="button secondary">
+              <Link
+                href={`/jobs/${job.id}`}
+                className="button secondary"
+                data-analytics-event={job.preview ? undefined : 'job_click'}
+                data-analytics-job={job.preview ? undefined : job.id}
+              >
                 查看完整 JD
                 <ArrowUpRight size={15} />
               </Link>

@@ -5,6 +5,7 @@ import { adminSupabase } from '@/lib/supabase/admin';
 import { purgeInterviewAudio } from '@/lib/interviews/server';
 import { purgeResumeFiles } from '@/lib/resume-files/server';
 import { adminError } from '@/lib/admin/server';
+import { eraseAnalyticsUser } from '@/lib/analytics/server';
 export const DELETE = api(async (request) => {
   z.object({ confirmation: z.literal('注销账号') })
     .strict()
@@ -23,6 +24,7 @@ export const DELETE = api(async (request) => {
   if (administrator.error?.code !== 'PGRST202') adminError(administrator.error);
   await purgeInterviewAudio(identity);
   await purgeResumeFiles(identity);
+  await eraseAnalyticsUser(identity.userId);
   // The target always comes from the validated session, never from request input.
   const { error } = await adminSupabase().auth.admin.deleteUser(user.id);
   databaseError(error);

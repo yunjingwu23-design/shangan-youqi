@@ -19,6 +19,10 @@ const installer = readFileSync('supabase/install-admin.sql', 'utf8');
 const account = readFileSync('supabase/migrations/202610300001_auth_and_workspace.sql', 'utf8');
 const catalog = readFileSync('supabase/migrations/202610310003_public_catalog.sql', 'utf8');
 const workflow = readFileSync('supabase/migrations/202610310005_admin_workflow.sql', 'utf8');
+const adminOtp = readFileSync(
+  'supabase/migrations/202611010001_admin_otp_without_time_limit.sql',
+  'utf8'
+);
 const owner = '10000000-0000-4000-8000-000000000001';
 const editor = '10000000-0000-4000-8000-000000000002';
 const ordinary = '10000000-0000-4000-8000-000000000003';
@@ -88,6 +92,39 @@ function snapshot(database) {
     'guard',(select to_jsonb(t) from private.admin_bootstrap_guard t));`
   );
 }
+const oldOtpClaims = JSON.stringify({
+  sub: owner,
+  role: 'authenticated',
+  amr: [{ method: 'otp', timestamp: Math.floor(Date.now() / 1000) - 1200 }],
+});
+function assertOlderOtpCanManage(database) {
+  const target = value(
+    database,
+    `select user_id from public.app_users where auth_user_id='${editor}';`
+  );
+  assert.match(target, /^[a-f0-9-]{36}$/);
+  run(
+    database,
+    `begin;
+    insert into public.admin_memberships(user_id,role)
+      select user_id,'editor' from public.app_users where auth_user_id='${editor}'
+      on conflict(user_id) do nothing;
+    set local role authenticated;
+    set local request.jwt.claims='${oldOtpClaims}';
+    do $otp$ declare invitation jsonb; begin
+      invitation:=public.admin_create_invitation('old-otp@example.com','editor','${'a'.repeat(64)}');
+      perform public.admin_revoke_invitation((invitation->>'id')::uuid);
+      if not exists(select 1 from public.admin_invitations where id=(invitation->>'id')::uuid and state='revoked') then
+        raise exception 'Invitation was not revoked';
+      end if;
+      perform public.admin_change_membership('${target}'::uuid,'reviewer',true,'旧 OTP 会话可以管理权限。');
+      if not exists(select 1 from public.admin_memberships where user_id='${target}'::uuid and role='reviewer' and active) then
+        raise exception 'Membership was not changed';
+      end if;
+    end $otp$;
+    rollback;`
+  );
+}
 test('owner SQL installer recovers missing and partial catalog dependencies without resetting data', async (t) => {
   const databases = [];
   t.after(() => {
@@ -109,6 +146,16 @@ test('owner SQL installer recovers missing and partial catalog dependencies with
         'select jsonb_agg(to_jsonb(t) order by user_id) from public.app_users t;'
       );
       run(db, installer);
+      assertOlderOtpCanManage(db);
+      run(
+        db,
+        `insert into private.site_events(id,visitor_key,event_type,page_key,provenance)
+        values('20000000-0000-4000-8000-000000000001','${'c'.repeat(64)}','page_view','/jobs','client');`
+      );
+      const analyticsBefore = value(
+        db,
+        "select jsonb_build_object('started',(select started_at from private.site_analytics_config),'events',(select jsonb_agg(to_jsonb(e)) from private.site_events e));"
+      );
       assert.equal(
         value(db, 'select jsonb_agg(to_jsonb(t) order by user_id) from public.app_users t;'),
         mapping
@@ -151,6 +198,13 @@ test('owner SQL installer recovers missing and partial catalog dependencies with
       assert.equal(
         value(
           db,
+          "select jsonb_build_object('started',(select started_at from private.site_analytics_config),'events',(select jsonb_agg(to_jsonb(e)) from private.site_events e));"
+        ),
+        analyticsBefore
+      );
+      assert.equal(
+        value(
+          db,
           `select count(*) from public.admin_memberships m join public.app_users a using(user_id) where a.auth_user_id='${ordinary}';`
         ),
         '0',
@@ -173,6 +227,38 @@ test('owner SQL installer recovers missing and partial catalog dependencies with
           "select bool_and(relrowsecurity) from pg_class where oid in ('public.admin_memberships'::regclass,'public.job_catalog'::regclass,'public.job_sources'::regclass);"
         ),
         't'
+      );
+    }
+  );
+  await t.test(
+    'an incremental OTP migration upgrades an existing installation without changing data or granting helper access',
+    () => {
+      const db = fresh();
+      run(db, catalog + workflow);
+      run(db, "select public.bootstrap_site_admin('876901712@qq.com');");
+      const denied = run(
+        db,
+        `begin; set local role authenticated; set local request.jwt.claims='${oldOtpClaims}';
+        select public.admin_create_invitation('old-otp@example.com','editor','${'a'.repeat(64)}');
+        rollback;`,
+        true
+      );
+      assert.notEqual(denied.status, 0);
+      assert.match(denied.stderr, /ADMIN_REAUTH/);
+      const before = snapshot(db);
+      run(db, adminOtp);
+      assert.equal(snapshot(db), before);
+      assertOlderOtpCanManage(db);
+      run(db, adminOtp);
+      run(db, installer);
+      assert.equal(snapshot(db), before);
+      assertOlderOtpCanManage(db);
+      assert.equal(
+        value(
+          db,
+          "select has_function_privilege('anon','private.recent_admin_otp()','execute') or has_function_privilege('authenticated','private.recent_admin_otp()','execute');"
+        ),
+        'f'
       );
     }
   );

@@ -6,6 +6,9 @@ import './resume-files.css';
 import './admin.css';
 import { SiteChrome } from '@/components/site-navigation';
 import { siteSession } from '@/lib/site-session';
+import { Suspense } from 'react';
+import { AnalyticsTracker } from '@/components/analytics-tracker';
+import './analytics.css';
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   title: '上岸有期 · 让每一步，都离上岸更近',
@@ -20,6 +23,9 @@ export default async function Layout({ children }: Readonly<{ children: React.Re
         <SiteChrome signedIn={Boolean(user)} scope={user?.id || 'guest'}>
           {children}
         </SiteChrome>
+        <Suspense fallback={null}>
+          <AnalyticsTracker />
+        </Suspense>
       </body>
     </html>
   );

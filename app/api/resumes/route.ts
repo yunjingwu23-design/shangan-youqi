@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { api, actor, ApiError, databaseError, readBody } from '@/lib/api';
 import { resumeSaveSchema, readResume } from '@/lib/resume';
 import { readOriginal } from '@/lib/resume-files/model';
+import { recordBusinessEvent } from '@/lib/analytics/server';
 export const GET = api(async (request) => {
   const { db, userId } = await actor();
   const params = new URL(request.url).searchParams;
@@ -86,6 +87,7 @@ export const POST = api(async (request) => {
         409,
         '简历已在其他页面修改，当前编辑内容仍保留。请另存为新版本或重新载入后再编辑。'
       );
+    await recordBusinessEvent('resume_save', userId, '/resume');
     return NextResponse.json({ resume: data });
   }
   const { data, error } = await db
@@ -94,5 +96,6 @@ export const POST = api(async (request) => {
     .select('id,title,company,updated_at')
     .single();
   databaseError(error);
+  await recordBusinessEvent('resume_save', userId, '/resume');
   return NextResponse.json({ resume: data }, { status: 201 });
 }, true);

@@ -5,6 +5,7 @@ import { entrySchema, entryPatchSchema, kindSchema } from '@/lib/validation';
 import { removeOriginalFile } from '@/lib/resume-files/server';
 import { readOriginal } from '@/lib/resume-files/model';
 import { legacyStatusValues } from '@/lib/application-status';
+import { recordBusinessEvent } from '@/lib/analytics/server';
 function entryWriteError(error: { code?: string } | null, status?: string) {
   if (error?.code === '23514' && status && !legacyStatusValues.some((value) => value === status))
     throw new ApiError(409, '工作台状态升级尚未完成，请联系管理员后重试。');
@@ -55,6 +56,13 @@ export const POST = api(async (request) => {
     .select()
     .single();
   entryWriteError(error, input.status);
+  if (input.kind === 'resume') await recordBusinessEvent('resume_save', userId, '/resume');
+  if (input.kind === 'interview_review') {
+    try {
+      if (JSON.parse(input.content || '{}').format === 'shangan-mock-interest-v1')
+        await recordBusinessEvent('mock_interest', userId, '/interview-center/mock');
+    } catch {}
+  }
   return NextResponse.json({ entry: data }, { status: 201 });
 }, true);
 export const PATCH = api(async (request) => {
@@ -81,6 +89,7 @@ export const PATCH = api(async (request) => {
     .maybeSingle();
   entryWriteError(error, input.status);
   if (!data) throw new ApiError(404, '记录不存在。');
+  if (existing.data?.kind === 'resume') await recordBusinessEvent('resume_save', userId, '/resume');
   return NextResponse.json({ entry: data });
 }, true);
 export const DELETE = api(async (request) => {

@@ -211,6 +211,7 @@ test(
     const ids: string[] = [];
     t.after(async () => {
       unblock?.();
+      await a.request('/api/analytics/consent', 'POST', { choice: 'reject' });
       for (const id of ids) await admin.auth.admin.deleteUser(id);
       await cleanInterviewAudio(admin);
       await rm(dir, { recursive: true, force: true });
@@ -223,6 +224,18 @@ test(
       db = await b.database();
     ids.push(da.session.user.id, db.session.user.id);
     const profile = (await a.request('/api/profile')).data.profile;
+    assert.equal(
+      (await a.request('/api/analytics/consent', 'POST', { choice: 'accept' })).response.status,
+      200
+    );
+    const analyticsBefore = {
+      created: Number(
+        sql("select count(*) from private.site_events where event_type='ai_interview_create';")
+      ),
+      requested: Number(
+        sql("select count(*) from private.site_events where event_type='ai_report_request';")
+      ),
+    };
     const job = (
       await a.request('/api/entries', 'POST', {
         kind: 'application',
@@ -292,6 +305,12 @@ test(
           404
         );
         current = await createUploaded();
+        assert.equal(
+          Number(
+            sql("select count(*) from private.site_events where event_type='ai_interview_create';")
+          ),
+          analyticsBefore.created + 1
+        );
         assert.equal((await b.request(`/api/interviews/${current.id}`)).response.status, 404);
         assert.equal(
           (await b.request(`/api/interviews/${current.id}/upload`, 'POST', {})).response.status,
@@ -400,6 +419,18 @@ test(
         );
         await runInterviewTask(admin, provider);
         let detail = (await a.request(`/api/interviews/${current.id}`)).data;
+        assert.equal(
+          Number(
+            sql("select count(*) from private.site_events where event_type='ai_report_request';")
+          ),
+          analyticsBefore.requested + 1
+        );
+        assert.equal(
+          sql(
+            "select count(*) from private.site_events where event_type in ('ai_interview_create','ai_report_request') and (to_jsonb(site_events)::text like '%test.wav%' or to_jsonb(site_events)::text like '%已校对%');"
+          ),
+          '0'
+        );
         assert.equal(detail.interview.status, 'complete');
         assert.equal(detail.reports[0].source_version, 2);
         assert.equal(

@@ -80,6 +80,8 @@ export default async function Search({ searchParams }: { searchParams: Promise<{
                 href={`/jobs/${job.id}`}
                 key={job.id}
                 className="site-card"
+                data-analytics-event={preview ? undefined : 'job_click'}
+                data-analytics-job={preview ? undefined : job.id}
                 style={{ display: 'block' }}
               >
                 <strong>{job.title}</strong>

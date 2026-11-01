@@ -4,6 +4,7 @@ import { api, actor, ApiError, readBody, databaseError } from '@/lib/api';
 import { fileEditSchema, originalResumeSchema } from '@/lib/resume-files/model';
 import { ownedOriginal, originalBytes, createOriginal } from '@/lib/resume-files/server';
 import { editWord } from '@/lib/resume-files/word';
+import { recordBusinessEvent } from '@/lib/analytics/server';
 export const PUT = api(async (request) => {
   const id = z.uuid().parse(new URL(request.url).pathname.split('/').at(-2));
   const input = z
@@ -36,6 +37,7 @@ export const PUT = api(async (request) => {
     .maybeSingle();
   databaseError(result.error);
   if (!result.data) throw new ApiError(409, '该版本已在其他页面修改，请保留当前修改后重新载入。');
+  await recordBusinessEvent('resume_save', identity.userId, '/resume');
   return NextResponse.json({ resume: { ...result.data, original } });
 }, true);
 export const POST = api(async (request) => {
@@ -64,5 +66,6 @@ export const POST = api(async (request) => {
     .select('id,title,company,updated_at')
     .single();
   databaseError(saved.error);
+  await recordBusinessEvent('resume_save', identity.userId, '/resume');
   return NextResponse.json({ resume: { ...saved.data, original: copied } }, { status: 201 });
 }, true);

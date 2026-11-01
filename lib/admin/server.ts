@@ -8,7 +8,7 @@ export function adminError(error: unknown) {
   const value = error as { message?: string; code?: string };
   const known: Record<string, [number, string]> = {
     ADMIN_FORBIDDEN: [403, '当前账号无权执行此操作。'],
-    ADMIN_REAUTH: [403, '请退出并重新验证邮箱，在 15 分钟内管理管理员权限。'],
+    ADMIN_REAUTH: [403, '请先通过邮箱验证码登录，再管理管理员权限。'],
     ADMIN_CONFLICT: [409, '记录已被修改，请刷新后重试。'],
     ADMIN_NOT_FOUND: [404, '未找到该记录。'],
     ADMIN_INVALID: [400, '输入格式或字段不受支持。'],

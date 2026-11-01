@@ -11,5 +11,7 @@ export const POST = api(async (request) => {
   const { data, error } = await db.auth.verifyOtp({ email, token, type: 'email' });
   if (error || !data.user || !data.session)
     throw new ApiError(400, '验证码无效或已过期，请检查后重试。');
+  const audit = await db.rpc('admin_record_login');
+  if (audit.error && audit.error.code !== 'PGRST202') console.error('ADMIN_LOGIN_AUDIT_FAILED');
   return NextResponse.json({ redirectTo: '/workspace' });
 }, true);

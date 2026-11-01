@@ -19,6 +19,8 @@
     "test:admin": "node --import tsx --test --test-concurrency=1 tests/admin.test.ts",
     "test:admin-email": "node --import tsx --test --test-concurrency=1 tests/admin-email.test.ts",
     "test:admin-install": "node --test tests/admin-installer.test.mjs",
+    "test:analytics": "node --import tsx --test --test-concurrency=1 tests/analytics-unit.test.ts tests/analytics.test.ts",
+    "analytics:cleanup": "node --import tsx scripts/analytics-cleanup.ts",
     "test:workspace-stages": "node --import tsx --test --test-concurrency=1 tests/workspace-stages.test.ts",
     "db:start": "node scripts/local.mjs start",
     "db:stop": "node scripts/local.mjs stop",

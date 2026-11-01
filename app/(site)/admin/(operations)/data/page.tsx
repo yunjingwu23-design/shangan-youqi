@@ -1,7 +1,7 @@
 import { adminPageIdentity } from '@/lib/admin/page';
-import { AdminDashboard } from '@/components/admin-dashboard';
+import { AdminAnalytics } from '@/components/admin-analytics';
 export default async function Page() {
   const identity = await adminPageIdentity();
   if (!identity) return null;
-  return <AdminDashboard role={identity.adminRole} />;
+  return <AdminAnalytics />;
 }

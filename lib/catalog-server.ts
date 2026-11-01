@@ -53,5 +53,7 @@ export async function siteManager(roles: AdminRole[] = ['super_admin', 'editor',
     .maybeSingle();
   databaseError(error);
   if (!data || !roles.includes(data.role)) throw new ApiError(403, '当前账号没有运营权限。');
+  const loginAudit = await identity.db.rpc('admin_record_login');
+  if (loginAudit.error && loginAudit.error.code !== 'PGRST202') databaseError(loginAudit.error);
   return { ...identity, adminRole: data.role as AdminRole };
 }

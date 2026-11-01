@@ -1,6 +1,11 @@
 import { test, expect, type Page, type BrowserContext } from '@playwright/test';
 import { base, mailboxCode } from './helpers';
-import { adminFixture, removeAdminFixtures, type AdminFixture } from './admin-fixtures';
+import {
+  adminFixture,
+  removeAdminFixtures,
+  ageAdminOtpSession,
+  type AdminFixture,
+} from './admin-fixtures';
 import { invitationMail } from './admin-email-fixtures';
 
 async function useSession(context: BrowserContext, actor: AdminFixture) {
@@ -143,7 +148,7 @@ test('P0 browser: real email OTP admin login, private file draft, reviewer publi
   }
 });
 
-test('P0 browser: super-admin creates a bound invitation, invited user logs in and accepts, disabled membership stops access', async ({
+test('P0 browser: super-admin with an older OTP invites a user, mailbox verification accepts and disabled membership stops access', async ({
   page,
   browser,
 }) => {
@@ -153,6 +158,7 @@ test('P0 browser: super-admin creates a bound invitation, invited user logs in a
     invitee = await adminFixture('ui-invitee');
   const invitedContext = await browser.newContext();
   try {
+    await ageAdminOtpSession(root);
     await useSession(page.context(), root);
     await page.goto('/admin/system');
     await adminChrome(page);

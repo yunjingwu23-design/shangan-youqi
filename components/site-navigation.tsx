@@ -112,11 +112,14 @@ function LocationNavigation() {
                         ? '审核工作台'
                         : path === '/admin/logs'
                           ? '操作日志'
-                          : path === '/admin/accept'
-                            ? '领取管理员邀请'
-                            : path === '/admin/jobs'
-                              ? '岗位管理与 JD 录入'
-                              : adminLinks.find((link) => link.href === path)?.label || '管理页面'}
+                          : path === '/admin/analytics'
+                            ? '数据分析中心'
+                            : path === '/admin/accept'
+                              ? '领取管理员邀请'
+                              : path === '/admin/jobs'
+                                ? '岗位管理与 JD 录入'
+                                : adminLinks.find((link) => link.href === path)?.label ||
+                                  '管理页面'}
                 </span>
               </>
             )}
@@ -216,7 +219,8 @@ export function SiteChrome({
                             path === '/admin/review'
                           : link.href === '/admin/system'
                             ? path === link.href || path === '/admin/logs'
-                            : path === link.href
+                            : path === link.href ||
+                              (link.href === '/admin/data' && path === '/admin/analytics')
                       )
                         ? 'page'
                         : undefined

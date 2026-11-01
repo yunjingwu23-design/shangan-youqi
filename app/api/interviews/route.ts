@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { api, readBody } from '@/lib/api';
 import { interviewActor, interviewError } from '@/lib/interviews/server';
 import { uploadSchema, CONSENT_VERSION } from '@/lib/interviews/schema';
+import { recordBusinessEvent } from '@/lib/analytics/server';
 export const GET = api(async (request) => {
   const { db, userId } = await interviewActor();
   const offset = Math.max(
@@ -25,11 +26,12 @@ export const GET = api(async (request) => {
   });
 });
 export const POST = api(async (request) => {
-  const { db } = await interviewActor();
+  const { db, userId } = await interviewActor();
   const details = uploadSchema.parse(await readBody(request));
   const { data, error } = await db.rpc('create_interview', {
     details: { ...details, consentVersion: CONSENT_VERSION },
   });
   interviewError(error);
+  await recordBusinessEvent('ai_interview_create', userId, '/workspace/interviews/new');
   return NextResponse.json({ id: data }, { status: 201 });
 }, true);
