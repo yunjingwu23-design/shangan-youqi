@@ -171,6 +171,25 @@ end $$;
 create trigger salary_report_quota before insert on public.salary_reports for each row execute function private.salary_quota();
 create trigger salary_offer_quota before insert on public.personal_offers for each row execute function private.salary_quota();
 create trigger salary_complaint_quota before insert on public.salary_complaints for each row execute function private.salary_quota();
+-- Preserve the installed site's cleanup behavior. AI interviews are optional and
+-- must not become a prerequisite for salary intelligence.
+do $preserve_cleanup$
+declare existing_definition text;
+begin
+ if to_regprocedure('private.salary_previous_personal_data()') is null then
+   if to_regprocedure('public.delete_my_personal_data()') is null then
+     raise exception '缺少已有的个人数据清理函数，请先核查账号基础迁移。';
+   end if;
+   existing_definition:=pg_get_functiondef('public.delete_my_personal_data()'::regprocedure);
+   if position('CREATE OR REPLACE FUNCTION public.delete_my_personal_data()' in existing_definition)<>1 then
+     raise exception '无法安全保留已有个人数据清理函数，本次升级已停止。';
+   end if;
+   execute replace(existing_definition,
+     'CREATE OR REPLACE FUNCTION public.delete_my_personal_data()',
+     'CREATE OR REPLACE FUNCTION private.salary_previous_personal_data()');
+ end if;
+end $preserve_cleanup$;
+revoke all on function private.salary_previous_personal_data() from public,anon,authenticated;
 create or replace function public.delete_my_personal_data() returns void language plpgsql security definer set search_path='' as $$
 declare owner_id uuid:=private.current_user_id();
 begin
@@ -178,7 +197,7 @@ begin
  delete from public.salary_reports where user_id=owner_id;
  delete from public.personal_offers where user_id=owner_id;
  delete from public.salary_complaints where user_id=owner_id;
- delete from public.interviews where user_id=owner_id;
- delete from public.workspace_entries where user_id=owner_id;
- update public.profiles set full_name='',desired_role='',city='',bio='' where user_id=owner_id;
+ perform private.salary_previous_personal_data();
 end $$;
+revoke all on function public.delete_my_personal_data() from public,anon;
+grant execute on function public.delete_my_personal_data() to authenticated;

@@ -6,14 +6,14 @@
 
 官网资料记录为 `https://shangan-youqi.vercel.app`，生产 Supabase 项目为 `lxecahdyvrdfezgtmbfp`。实际部署前仍需通过生产控制台核实二者绑定关系。
 
-- 单次数据库升级：[install-salary.sql](../supabase/install-salary.sql)，将两个增量迁移合并为一个事务。复制全文到目标项目 SQL Editor，以 postgres 运行。依赖或已有结构冲突时完整回滚，不删除用户数据。已安装时只运行末尾的只读检查，不要删除表重装。
+- 单次数据库升级：[install-salary.sql](../supabase/install-salary.sql)，将两个增量迁移合并为一个事务。复制全文到目标项目 SQL Editor，以 postgres 运行。必要基础表缺失或已有结构冲突时完整回滚，不删除用户数据。可选 AI 面试表不作为前置条件；已存在的个人数据清理函数完整保留，薪资清理在其前执行。缺失的身份/角色辅助函数从已有基础表恢复，不新建或提升管理员。已安装时只运行末尾的只读检查，不要删除表重装。
 - SQL Editor：`https://supabase.com/dashboard/project/lxecahdyvrdfezgtmbfp/sql/new`。先完成数据库升级，再将发布提交部署到现有 Vercel 项目，复用原生产环境变量；不上传 `.env.local`。
 - 线上验收：`/jobs/salary` 和 `/api/salary` 可正常读取；`/workspace/offers` 未登录时跳转登录；`/api/salary/reports` 未登录时返回 401；四个一级导航与旧岗位、简历、面经路径继续可用。不要在生产运行会创建账号、投稿和删除数据的本地测试套件。
 - 发布前记录 Vercel 当前生产部署 ID，以便应用部署失败时回退代码。新增数据库表保留；不要通过删表回退，避免丢失投稿。可单独核验 `node scripts/build-salary-installer.mjs --check`，确保 SQL 与已测试迁移一致。
 
 ## 上线顺序
 
-1. 在目标数据库备份并应用 `supabase/migrations/202611020001_salary_intelligence.sql`、`202611020002_salary_reference_privacy.sql`（按顺序）（依赖现有账号、后台角色和面试迁移）；本地 `npm run db:start` 自动应用。部署新版应用。不会导入示例薪资或改变已有岗位、简历、面经。
+1. 在目标数据库备份并应用 `supabase/migrations/202611020001_salary_intelligence.sql`、`202611020002_salary_reference_privacy.sql`（按顺序）（依赖现有账号和后台角色；不依赖可选 AI 面试表）；本地 `npm run db:start` 自动应用。部署新版应用。不会导入示例薪资或改变已有岗位、简历、面经。
 2. 审核员 / 超级管理员先维护公开标准公司；用户提交真实 Offer 后逐条脱敏、检查年份、薪资口径、重复和异常，再批准。编辑员可查看但不能审核。审核员不能批准自己的投稿。仅用户自述不能标成官方已证实。
 3. 合作数据必须另行获得书面授权、接口文档和有效期限后实现 `SalaryDataAdapter`。当前没有启用的适配器、OfferShow API 地址、抓取器或外部薪资数据。登记来源不代表接入 API，也不代表来源已被系统自动验证。
 

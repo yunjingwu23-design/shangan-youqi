@@ -17,23 +17,61 @@ const output = `-- 上岸有期：薪资情报与 Offer 对比，生产一次性
 begin;
 select pg_advisory_xact_lock(hashtextextended('shangan.salary.install',0));
 do $preflight$
+declare missing text[]:=array[]::text[]; target text;
 begin
   if current_user not in ('postgres','supabase_admin') then
     raise exception '请在目标 Supabase SQL Editor 选择 postgres 角色运行。';
   end if;
-  if to_regclass('public.app_users') is null or to_regclass('public.profiles') is null
-    or to_regclass('public.workspace_entries') is null or to_regclass('public.interviews') is null
-    or to_regclass('public.admin_memberships') is null
-    or to_regprocedure('private.current_user_id()') is null
-    or to_regprocedure('private.require_admin(text[])') is null
-    or to_regprocedure('public.delete_my_personal_data()') is null then
-    raise exception '现有账号、面试或后台迁移不完整。保留现有数据库，先核查缺失的依赖。';
+  foreach target in array array['public.app_users','public.profiles','public.workspace_entries','public.admin_memberships'] loop
+    if to_regclass(target) is null then missing:=array_append(missing,target); end if;
+  end loop;
+  if cardinality(missing)>0 then
+    raise exception '缺少必要基础表：%。本次未修改数据；无需安装 AI 面试模块。',array_to_string(missing,'、');
   end if;
   if to_regclass('public.salary_reports') is not null
     or to_regclass('public.personal_offers') is not null then
     raise exception '薪资结构已存在；本事务未改动数据，请先运行末尾的只读检查。';
   end if;
 end $preflight$;
+
+-- Restore only missing derived helpers from the existing identity/role tables.
+-- No administrator is created, invited or promoted; existing grants are preserved.
+do $compatibility$
+begin
+  if not exists(select 1 from pg_namespace where nspname='private') then
+    create schema private;
+    revoke all on schema private from public,anon;
+    grant usage on schema private to authenticated;
+  end if;
+  if to_regprocedure('private.current_user_id()') is null then
+    execute $definition$create function private.current_user_id() returns uuid
+      language sql stable security definer set search_path='' as
+      'select user_id from public.app_users where auth_user_id=(select auth.uid())'$definition$;
+    revoke all on function private.current_user_id() from public,anon;
+    grant execute on function private.current_user_id() to authenticated;
+  end if;
+  if to_regprocedure('private.admin_role()') is null then
+    execute $definition$create function private.admin_role() returns text
+      language sql stable security definer set search_path='' as
+      'select role from public.admin_memberships where user_id=private.current_user_id() and active'$definition$;
+    revoke all on function private.admin_role() from public,anon;
+    grant execute on function private.admin_role() to authenticated;
+  end if;
+  if to_regprocedure('private.require_admin(text[])') is null then
+    execute $definition$create function private.require_admin(roles text[]) returns text
+      language plpgsql security definer set search_path='' as $function$
+      declare result text;
+      begin
+        select role into result from public.admin_memberships where user_id=private.current_user_id() and active for share;
+        if result is null or not(result=any(roles)) then raise exception 'ADMIN_FORBIDDEN' using errcode='42501'; end if;
+        return result;
+      end $function$$definition$;
+    revoke all on function private.require_admin(text[]) from public,anon,authenticated;
+  end if;
+  if to_regprocedure('public.delete_my_personal_data()') is null then
+    raise exception '缺少必要的个人数据清理函数 public.delete_my_personal_data()。本次未修改数据。';
+  end if;
+end $compatibility$;
 ${body}
 commit;
 

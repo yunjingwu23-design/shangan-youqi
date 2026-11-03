@@ -6,23 +6,61 @@
 begin;
 select pg_advisory_xact_lock(hashtextextended('shangan.salary.install',0));
 do $preflight$
+declare missing text[]:=array[]::text[]; target text;
 begin
   if current_user not in ('postgres','supabase_admin') then
     raise exception '请在目标 Supabase SQL Editor 选择 postgres 角色运行。';
   end if;
-  if to_regclass('public.app_users') is null or to_regclass('public.profiles') is null
-    or to_regclass('public.workspace_entries') is null or to_regclass('public.interviews') is null
-    or to_regclass('public.admin_memberships') is null
-    or to_regprocedure('private.current_user_id()') is null
-    or to_regprocedure('private.require_admin(text[])') is null
-    or to_regprocedure('public.delete_my_personal_data()') is null then
-    raise exception '现有账号、面试或后台迁移不完整。保留现有数据库，先核查缺失的依赖。';
+  foreach target in array array['public.app_users','public.profiles','public.workspace_entries','public.admin_memberships'] loop
+    if to_regclass(target) is null then missing:=array_append(missing,target); end if;
+  end loop;
+  if cardinality(missing)>0 then
+    raise exception '缺少必要基础表：%。本次未修改数据；无需安装 AI 面试模块。',array_to_string(missing,'、');
   end if;
   if to_regclass('public.salary_reports') is not null
     or to_regclass('public.personal_offers') is not null then
     raise exception '薪资结构已存在；本事务未改动数据，请先运行末尾的只读检查。';
   end if;
 end $preflight$;
+
+-- Restore only missing derived helpers from the existing identity/role tables.
+-- No administrator is created, invited or promoted; existing grants are preserved.
+do $compatibility$
+begin
+  if not exists(select 1 from pg_namespace where nspname='private') then
+    create schema private;
+    revoke all on schema private from public,anon;
+    grant usage on schema private to authenticated;
+  end if;
+  if to_regprocedure('private.current_user_id()') is null then
+    execute $definition$create function private.current_user_id() returns uuid
+      language sql stable security definer set search_path='' as
+      'select user_id from public.app_users where auth_user_id=(select auth.uid())'$definition$;
+    revoke all on function private.current_user_id() from public,anon;
+    grant execute on function private.current_user_id() to authenticated;
+  end if;
+  if to_regprocedure('private.admin_role()') is null then
+    execute $definition$create function private.admin_role() returns text
+      language sql stable security definer set search_path='' as
+      'select role from public.admin_memberships where user_id=private.current_user_id() and active'$definition$;
+    revoke all on function private.admin_role() from public,anon;
+    grant execute on function private.admin_role() to authenticated;
+  end if;
+  if to_regprocedure('private.require_admin(text[])') is null then
+    execute $definition$create function private.require_admin(roles text[]) returns text
+      language plpgsql security definer set search_path='' as $function$
+      declare result text;
+      begin
+        select role into result from public.admin_memberships where user_id=private.current_user_id() and active for share;
+        if result is null or not(result=any(roles)) then raise exception 'ADMIN_FORBIDDEN' using errcode='42501'; end if;
+        return result;
+      end $function$$definition$;
+    revoke all on function private.require_admin(text[]) from public,anon,authenticated;
+  end if;
+  if to_regprocedure('public.delete_my_personal_data()') is null then
+    raise exception '缺少必要的个人数据清理函数 public.delete_my_personal_data()。本次未修改数据。';
+  end if;
+end $compatibility$;
 -- 202611020001_salary_intelligence.sql
 -- Salary intelligence. No third-party records or fabricated seed salaries.
 create table public.salary_companies(id uuid primary key default gen_random_uuid(), name text unique not null check(length(name) between 1 and 80), official_url text not null default '' check(official_url='' or official_url ~ '^https://[^/@ ]+'), updated_at timestamptz not null default now());
@@ -197,6 +235,25 @@ end $$;
 create trigger salary_report_quota before insert on public.salary_reports for each row execute function private.salary_quota();
 create trigger salary_offer_quota before insert on public.personal_offers for each row execute function private.salary_quota();
 create trigger salary_complaint_quota before insert on public.salary_complaints for each row execute function private.salary_quota();
+-- Preserve the installed site's cleanup behavior. AI interviews are optional and
+-- must not become a prerequisite for salary intelligence.
+do $preserve_cleanup$
+declare existing_definition text;
+begin
+ if to_regprocedure('private.salary_previous_personal_data()') is null then
+   if to_regprocedure('public.delete_my_personal_data()') is null then
+     raise exception '缺少已有的个人数据清理函数，请先核查账号基础迁移。';
+   end if;
+   existing_definition:=pg_get_functiondef('public.delete_my_personal_data()'::regprocedure);
+   if position('CREATE OR REPLACE FUNCTION public.delete_my_personal_data()' in existing_definition)<>1 then
+     raise exception '无法安全保留已有个人数据清理函数，本次升级已停止。';
+   end if;
+   execute replace(existing_definition,
+     'CREATE OR REPLACE FUNCTION public.delete_my_personal_data()',
+     'CREATE OR REPLACE FUNCTION private.salary_previous_personal_data()');
+ end if;
+end $preserve_cleanup$;
+revoke all on function private.salary_previous_personal_data() from public,anon,authenticated;
 create or replace function public.delete_my_personal_data() returns void language plpgsql security definer set search_path='' as $$
 declare owner_id uuid:=private.current_user_id();
 begin
@@ -204,10 +261,10 @@ begin
  delete from public.salary_reports where user_id=owner_id;
  delete from public.personal_offers where user_id=owner_id;
  delete from public.salary_complaints where user_id=owner_id;
- delete from public.interviews where user_id=owner_id;
- delete from public.workspace_entries where user_id=owner_id;
- update public.profiles set full_name='',desired_role='',city='',bio='' where user_id=owner_id;
+ perform private.salary_previous_personal_data();
 end $$;
+revoke all on function public.delete_my_personal_data() from public,anon;
+grant execute on function public.delete_my_personal_data() to authenticated;
 
 -- 202611020002_salary_reference_privacy.sql
 -- Public source provenance never exposes internal licensing records.
