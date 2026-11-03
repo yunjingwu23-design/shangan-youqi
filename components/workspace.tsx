@@ -203,6 +203,7 @@ export function Workspace({
         <header className="workspace-header">
           <div className="ia-workspace-account">
             <Link href="/workspace/settings">账号与资料</Link>
+            <Link href="/workspace/offers">Offer 对比</Link>
             <button
               disabled={busy}
               onClick={() =>

@@ -27,7 +27,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:resume-files": "node --import tsx --test --test-concurrency=1 tests/resume-files.test.ts",
-    "test:resume-layout": "node --import tsx --test tests/resume-layout.test.ts"
+    "test:resume-layout": "node --import tsx --test tests/resume-layout.test.ts",
+    "test:salary": "node --import tsx --test --test-concurrency=1 tests/salary-unit.test.ts tests/salary.test.ts"
   },
   "dependencies": {
     "@embedpdf/pdfium": "2.15.1",

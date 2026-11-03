@@ -13,12 +13,14 @@ export const moduleLinks: Record<ModuleKey, { href: string; label: string }[]> =
     { href: '/jobs?type=autumn_recruitment', label: '秋招' },
     { href: '/jobs?type=spring_recruitment', label: '春招' },
     { href: '/jobs/calendar', label: '招聘日历' },
+    { href: '/jobs/salary', label: '查薪资' },
   ],
   career: [
     { href: '/workspace', label: '求职工作台' },
     { href: '/resume', label: '我的简历' },
     { href: '/workspace/favorites', label: '收藏岗位' },
     { href: '/workspace/schedule', label: '日程与提醒' },
+    { href: '/workspace/offers', label: 'Offer 对比' },
   ],
   interview: [
     { href: '/workspace/interviews', label: 'AI 面试复盘' },
@@ -79,6 +81,8 @@ export function activeModuleLink(path: string, query: URLSearchParams) {
 export function pageLabel(path: string) {
   const labels: Record<string, string> = {
     '/resume': '我的简历',
+    '/jobs/salary': '查薪资',
+    '/workspace/offers': 'Offer 对比',
     '/workspace/settings': '账号与资料',
     '/workspace/favorites': '收藏岗位',
     '/workspace/schedule': '日程与提醒',

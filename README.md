@@ -21,6 +21,10 @@ npm run dev
 
 环境已经隔离，使用现有 checkout；无需新建 Git worktree。受限云终端中的网络、Docker 和 Chromium 命令需要平台允许的执行模式。
 
+## 薪资情报与 Offer 对比
+
+找岗位 → 查薪资；我的求职 → Offer 对比；后台 → 薪资审核与来源。支持真实匿名投稿、脱敏审核、小样本保护的薪资分布、个人私有 Offer 对比与举报处理。OfferShow 尚未接入，需取得正式授权和接口文档。部署迁移、口径与验证见 [薪资模块说明](docs/SALARY_INTELLIGENCE.md)。本地验证：`npm run test:salary`、`npx playwright test tests/salary.e2e.ts`。
+
 ## 已实现
 
 - 真实邮箱 OTP（兼容 6–10 位数字）：首次注册、再次登录、错误/过期/已使用验证码拒绝、重发倒计时、退出、HTTP-only Cookie 会话恢复和刷新。
