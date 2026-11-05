@@ -25,6 +25,10 @@ npm run dev
 
 找岗位 → 查薪资；我的求职 → Offer 对比；后台 → 薪资审核与来源。支持真实匿名投稿、脱敏审核、小样本保护的薪资分布、个人私有 Offer 对比与举报处理。OfferShow 尚未接入，需取得正式授权和接口文档。部署迁移、口径与验证见 [薪资模块说明](docs/SALARY_INTELLIGENCE.md)。本地验证：`npm run test:salary`、`npx playwright test tests/salary.e2e.ts`。
 
+### 薪酬 / 社保计算器
+
+查薪资页及 Offer 对比页可进入 `/jobs/salary/calculator`，无需登录、无需数据库升级。支持个人与单位社保、公积金、到手工资、年包、年终奖两种计税及逐月累计预扣。输入仅在浏览器中计算；默认是明确标注的演示比例，城市参数、上下限与可税前扣除额需自行核对。计算口径见 [计算器说明](docs/PAYROLL_CALCULATOR.md)。验证：`npm run test:calculator`。
+
 ## 已实现
 
 - 真实邮箱 OTP（兼容 6–10 位数字）：首次注册、再次登录、错误/过期/已使用验证码拒绝、重发倒计时、退出、HTTP-only Cookie 会话恢复和刷新。

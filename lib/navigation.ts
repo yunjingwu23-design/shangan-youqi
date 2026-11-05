@@ -82,6 +82,7 @@ export function pageLabel(path: string) {
   const labels: Record<string, string> = {
     '/resume': '我的简历',
     '/jobs/salary': '查薪资',
+    '/jobs/salary/calculator': '薪酬 / 社保计算器',
     '/workspace/offers': 'Offer 对比',
     '/workspace/settings': '账号与资料',
     '/workspace/favorites': '收藏岗位',

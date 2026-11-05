@@ -61,6 +61,7 @@ export function SalaryExplorer({ signedIn }: { signedIn: boolean }) {
           <Link className="primary" href="/workspace/offers">
             我的 Offer 对比 ↗
           </Link>
+          <Link href="/jobs/salary/calculator">薪酬 / 社保计算器 ↗</Link>
           <a href="#salary-share">匿名分享 / 我的投稿</a>
         </div>
       </header>
