@@ -21,7 +21,12 @@ const base = z
   })
   .strict();
 const rate = z
-  .object({ employee: percentage, employer: percentage, baseOverride: money.nullable() })
+  .object({
+    employee: percentage,
+    employer: percentage,
+    baseOverride: money.nullable(),
+    bounds: z.object({ minimum: money.nullable(), maximum: money.nullable() }).strict().optional(),
+  })
   .strict();
 export const payrollSchema = z
   .object({
@@ -60,6 +65,14 @@ export const payrollSchema = z
           message: `${k === 'socialBase' ? '社保' : '公积金'}基数下限不能高于上限。`,
         });
     }
+    for (const r of Object.values(v.rates)) {
+      if (
+        r.bounds?.minimum != null &&
+        r.bounds?.maximum != null &&
+        r.bounds.minimum > r.bounds.maximum
+      )
+        ctx.addIssue({ code: 'custom', message: '单项保险基数下限不能高于上限。' });
+    }
     if (v.rates.injury.employee !== 0 || v.rates.maternity.employee !== 0)
       ctx.addIssue({ code: 'custom', message: '职工工伤、生育保险不设个人缴费。' });
     if (v.maternityMerged && v.rates.maternity.employer !== 0)
@@ -72,6 +85,8 @@ export const payrollSchema = z
         code: 'custom',
         message: '本模型支持双方公积金比例各为 0–12%，超比例情形不在本模型范围内。',
       });
+    if (v.rates.housing.bounds !== undefined)
+      ctx.addIssue({ code: 'custom', message: '公积金请使用独立基数上下限。' });
     if (v.rates.housing.baseOverride !== null)
       ctx.addIssue({ code: 'custom', message: '公积金请通过独立的公积金基数设置。' });
     if (v.bonusMode === 'separate' && v.annualBonus > 0 && !v.bonusEligible)
@@ -160,7 +175,9 @@ export function calculatePayroll(raw: unknown) {
         key === 'housing'
           ? housingBase
           : r.baseOverride === null
-            ? socialBase
+            ? r.bounds
+              ? effectiveBase({ ...v.socialBase, ...r.bounds }, salary)
+              : socialBase
             : fen(r.baseOverride);
     return {
       key,

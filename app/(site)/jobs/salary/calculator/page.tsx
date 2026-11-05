@@ -4,5 +4,5 @@ export const metadata = {
   description: '估算税后到手工资、个人与单位社保公积金、年终奖个税和全年用工成本。',
 };
 export default function Page() {
-  return <SalaryCalculator />;
+  return <SalaryCalculator initialPolicyMonth={new Date().toISOString().slice(0, 7)} />;
 }

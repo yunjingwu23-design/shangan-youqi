@@ -21,7 +21,8 @@ test('public calculator: local-only estimates, employer split and invalid-input 
     'aria-current',
     'page'
   );
-  await expect(page.getByText('当前为演示缴费参数 · 未加载城市官方标准')).toBeVisible();
+  await page.getByRole('combobox', { name: '缴费城市', exact: true }).selectOption('custom');
+  await expect(page.getByText('自定义参数（可选）', { exact: true }).first()).toBeVisible();
   await expect(page.getByRole('status', { name: '年净收入估算' })).toContainText('186,720.00');
   await page.getByLabel('缴费城市（备注）').fill('上海');
   await expect(page.getByRole('status', { name: '年净收入估算' })).toContainText('186,720.00');
@@ -44,6 +45,7 @@ test('calculator: eligible bonus comparison, cap validation and mobile scrolling
   page,
 }) => {
   await page.goto('/jobs/salary/calculator');
+  await page.getByRole('combobox', { name: '缴费城市', exact: true }).selectOption('custom');
   await page.getByLabel('固定薪资月数', { exact: true }).fill('13');
   await page.getByLabel('年终奖金（元）', { exact: true }).fill('60000');
   await expect(page.getByRole('status', { name: '全年个人所得税', exact: true })).toContainText(
