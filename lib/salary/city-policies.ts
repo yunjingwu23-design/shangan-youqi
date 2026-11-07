@@ -10,6 +10,8 @@ export const cityDirectory = [
       'ybj.sh.gov.cn',
       'gjj.sh.gov.cn',
       'www.shgjj.com',
+      'www.shzfgjj.cn',
+      'shzfgjj.cn',
       'www.shanghai.gov.cn',
     ],
   },
@@ -21,12 +23,27 @@ export const cityDirectory = [
   {
     id: 'shenzhen',
     name: '深圳',
-    hosts: ['hrss.sz.gov.cn', 'szsi.sz.gov.cn', 'ybj.sz.gov.cn', 'gjj.sz.gov.cn', 'www.sz.gov.cn'],
+    hosts: [
+      'hrss.sz.gov.cn',
+      'szsi.sz.gov.cn',
+      'ybj.sz.gov.cn',
+      'gjj.sz.gov.cn',
+      'zjj.sz.gov.cn',
+      'hsa.sz.gov.cn',
+      'hrss.gd.gov.cn',
+      'www.sz.gov.cn',
+    ],
   },
   {
     id: 'guangzhou',
     name: '广州',
-    hosts: ['rsj.gz.gov.cn', 'ybj.gz.gov.cn', 'gjj.gz.gov.cn', 'www.gz.gov.cn'],
+    hosts: [
+      'rsj.gz.gov.cn',
+      'ybj.gz.gov.cn',
+      'gjj.gz.gov.cn',
+      'hrss.gd.gov.cn',
+      'www.gz.gov.cn',
+    ],
   },
 ] as const;
 export type CityId = (typeof cityDirectory)[number]['id'];

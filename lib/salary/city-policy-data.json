@@ -1,1 +1,237 @@
-[]
+[
+  {
+    "id": "shanghai-2026-social-housing",
+    "cityId": "shanghai",
+    "label": "上海市 2026 社保年度（2026年7月起）",
+    "validFrom": "2026-07-01",
+    "validThrough": "2027-06-30",
+    "verifiedOn": "2026-11-07",
+    "sources": [
+      {
+        "title": "本市调整2026年度社保缴费基数上下限",
+        "url": "https://rsj.sh.gov.cn/tgsgg_17341/20260818/t0035_1443203.html",
+        "publishedOn": "2026-08-18",
+        "retrievedAt": "2026-11-07T10:30:00.000Z",
+        "sha256": "acc1da4d67d780bc86c50c72a821798bde4545b9c4b84e864cb248685886716f",
+        "evidence": "按照有关规定及要求，2026年7月1日起，本市社保缴费基数的上限调整为37731元/月，下限调整为7546元/月。本市2025年度全口径城镇单位就业人员平均工资为12577元/月。"
+      },
+      {
+        "title": "关于2026年度上海市调整住房公积金缴存基数、比例以及月缴存额上下限的通知",
+        "url": "https://www.shzfgjj.cn/html/newxxgk/zcwj/gfxwj/228478.html",
+        "publishedOn": "2026-08-18",
+        "retrievedAt": "2026-11-07T10:32:00.000Z",
+        "sha256": "709b9037df2816678883623d448fe86f9bdc48a5150a6068ce5c4ada8fb810ae",
+        "evidence": "住房公积金缴存基数最高不超过37731元，最低不低于2740元。单位和职工住房公积金缴存比例为各5%~7%（取整数值）。单位可以在上述比例范围内，自主确定住房公积金具体缴存比例。"
+      }
+    ],
+    "parameters": {
+      "socialBase": { "mode": "salary", "value": 0, "minimum": 7546, "maximum": 37731 },
+      "housingBase": { "mode": "salary", "value": 0, "minimum": 2740, "maximum": 37731 },
+      "rates": {
+        "pension": { "employee": 8, "employer": 16, "baseOverride": null },
+        "medical": { "employee": 2, "employer": 9, "baseOverride": null },
+        "unemployment": { "employee": 0.5, "employer": 0.5, "baseOverride": null },
+        "injury": { "employee": 0, "employer": 0.4, "baseOverride": null },
+        "maternity": { "employee": 0, "employer": 0, "baseOverride": null },
+        "housing": { "employee": 7, "employer": 7, "baseOverride": null }
+      },
+      "medicalExtra": 0,
+      "maternityMerged": true
+    },
+    "assumptions": [
+      "社保缴费基数上下限 7546–37731 元/月，自 2026年7月1日起执行，来源为上海市人社局公告。",
+      "养老保险单位16%、个人8%；医疗保险（含生育）单位9%、个人2%；失业保险单位0.5%、个人0.5%，为上海市现行城镇职工社会保险缴费比例。",
+      "工伤保险按行业八档基准费率 0.2%–1.9% 浮动，默认按二类行业 0.4% 估算，实际以单位核定费率为准。",
+      "住房公积金单位与个人缴存比例均为 5%–7% 区间自选，默认按 7% 估算；补充公积金（各 1%–5%）未计入。",
+      "生育保险已并入医疗保险，单位生育比例不再单列。"
+    ]
+  },
+  {
+    "id": "beijing-2026-social-housing",
+    "cityId": "beijing",
+    "label": "北京市 2026 社保年度（2026年7月起）",
+    "validFrom": "2026-07-01",
+    "validThrough": "2027-06-30",
+    "verifiedOn": "2026-11-07",
+    "sources": [
+      {
+        "title": "关于2026年度各项社会保险缴费工资基数上下限的通告",
+        "url": "https://rsj.beijing.gov.cn/xxgk/2024zcwj/202608/t20260821_4831461.html",
+        "publishedOn": "2026-08-20",
+        "retrievedAt": "2026-11-07T10:34:00.000Z",
+        "sha256": "2d355993866ab76ce37647f2b3a53ca8c620e5dd9c43040a553b3c2cadb726c3",
+        "evidence": "自2026年7月起，本市2026年度职工基本养老保险、失业保险、工伤保险、职工基本医疗保险（含生育）月缴费基数上限确定为36348元，月缴费基数下限为7270元。"
+      },
+      {
+        "title": "关于2026住房公积金年度缴存有关问题的通知",
+        "url": "https://gjj.beijing.gov.cn/web/zwgk61/2024zcwj/436433461/744103382/index.html",
+        "publishedOn": "2026-08-24",
+        "retrievedAt": "2026-11-07T10:35:00.000Z",
+        "sha256": "a0c8646dda4d9476fa3f7b92a026f66b4fe2f7b7d73850e448a7ea36bcb167d6",
+        "evidence": "2026住房公积金年度继续执行5%至12%的缴存比例政策。2026住房公积金年度住房公积金月缴存基数上限为36348元，月缴存基数下限为2540元。"
+      }
+    ],
+    "parameters": {
+      "socialBase": { "mode": "salary", "value": 0, "minimum": 7270, "maximum": 36348 },
+      "housingBase": { "mode": "salary", "value": 0, "minimum": 2540, "maximum": 36348 },
+      "rates": {
+        "pension": { "employee": 8, "employer": 16, "baseOverride": null },
+        "medical": { "employee": 2, "employer": 9.8, "baseOverride": null },
+        "unemployment": { "employee": 0.5, "employer": 0.5, "baseOverride": null },
+        "injury": { "employee": 0, "employer": 0.4, "baseOverride": null },
+        "maternity": { "employee": 0, "employer": 0, "baseOverride": null },
+        "housing": { "employee": 12, "employer": 12, "baseOverride": null }
+      },
+      "medicalExtra": 3,
+      "maternityMerged": true
+    },
+    "assumptions": [
+      "社保缴费基数上下限 7270–36348 元/月，自 2026年7月起执行，来源为北京市人社局等三部门通告。",
+      "养老保险单位16%、个人8%；医疗保险（含生育）单位9.8%、个人2%另加3元/月大额医疗互助固定额；失业保险单位0.5%、个人0.5%，为北京市现行缴费比例。",
+      "工伤保险按行业基准费率 0.2%–1.9% 浮动，默认按 0.4% 估算，实际以单位核定费率为准。",
+      "住房公积金单位与个人缴存比例均为 5%–12% 区间自选，默认按 12% 估算。",
+      "生育保险已并入医疗保险，单位生育比例不再单列。"
+    ]
+  },
+  {
+    "id": "shenzhen-2026-social-housing",
+    "cityId": "shenzhen",
+    "label": "深圳市 2026 年度（2026年9月起，非深户·职工一档医保）",
+    "validFrom": "2026-09-01",
+    "validThrough": "2026-12-31",
+    "verifiedOn": "2026-11-07",
+    "sources": [
+      {
+        "title": "关于公布2026年职工基本养老保险缴费基数上下限有关问题的通知",
+        "url": "https://hrss.gd.gov.cn/gkmlpt/content/4/4956/mmpost_4956863.html",
+        "publishedOn": "2026-09-17",
+        "retrievedAt": "2026-11-07T10:36:00.000Z",
+        "sha256": "a0adaddd320c533868125692ee64ba6acf97481d180a6da9a0589a2d82932bf7",
+        "evidence": "自2026年7月1日起，全省企业职工基本养老保险缴费基数上限调整为27603元，缴费基数下限调整为5521元。"
+      },
+      {
+        "title": "深圳市医疗保障局温馨提示（2026年职工医保与生育保险缴费基数）",
+        "url": "https://hsa.sz.gov.cn/fzlm/znts/cnyc/content/post_12568243.html",
+        "publishedOn": "2025-12-29",
+        "retrievedAt": "2026-11-07T10:37:00.000Z",
+        "sha256": "0f5b030833d346572721eee073428ee542fb9124fa4b3d093ac94a3974c1237a",
+        "evidence": "自2026年1月1日起至2026年12月31日止，我市职工基本医疗保险和生育保险的缴费基数下限为6727元，上限为33633元。自2026年1月1日起，企业职工基本医疗保险一档单位缴费费率由5%恢复为6%。"
+      }
+    ],
+    "parameters": {
+      "socialBase": { "mode": "salary", "value": 0, "minimum": 5521, "maximum": 27603 },
+      "housingBase": { "mode": "salary", "value": 0, "minimum": 2520, "maximum": 48471 },
+      "rates": {
+        "pension": { "employee": 8, "employer": 16, "baseOverride": null },
+        "medical": {
+          "employee": 2,
+          "employer": 6,
+          "baseOverride": null,
+          "bounds": { "minimum": 6727, "maximum": 33633 }
+        },
+        "unemployment": {
+          "employee": 0.2,
+          "employer": 0.8,
+          "baseOverride": null,
+          "bounds": { "minimum": 2700, "maximum": 48471 }
+        },
+        "injury": {
+          "employee": 0,
+          "employer": 0.4,
+          "baseOverride": null,
+          "bounds": { "minimum": 2700, "maximum": 48471 }
+        },
+        "maternity": {
+          "employee": 0,
+          "employer": 0.5,
+          "baseOverride": null,
+          "bounds": { "minimum": 6727, "maximum": 33633 }
+        },
+        "housing": { "employee": 5, "employer": 5, "baseOverride": null }
+      },
+      "medicalExtra": 0,
+      "maternityMerged": false
+    },
+    "assumptions": [
+      "养老保险基数上下限 5521–27603 元/月，自 2026年7月1日起执行，来源为广东省人社厅等三部门通知（粤人社发〔2026〕24号）。",
+      "默认按非深户职工口径估算：养老保险单位16%、个人8%；深户职工单位另缴1%地方补充养老保险，未计入。",
+      "医疗保险默认按职工一档医保：单位6%、个人2%，基数 6727–33633 元/月；二档医保（单位1.5%、个人0.5%）未采用。",
+      "生育保险单位0.5%（个人不缴），缴费基数与职工医保一致（6727–33633 元/月），未并入医疗保险。",
+      "失业保险单位0.8%、个人0.2%，基数 2700–48471 元/月（自2026年9月1日起）。",
+      "工伤保险按行业八档基准费率 0.2%–1.4% 浮动，默认按 0.4% 估算。",
+      "住房公积金单位与个人缴存比例均为 5%–12% 区间自选（取1%整数倍），默认按 5% 估算，基数 2520–48471 元/月。"
+    ]
+  },
+  {
+    "id": "guangzhou-2026-social-housing",
+    "cityId": "guangzhou",
+    "label": "广州市 2026 年度（2026年9月起）",
+    "validFrom": "2026-09-01",
+    "validThrough": "2026-12-31",
+    "verifiedOn": "2026-11-07",
+    "sources": [
+      {
+        "title": "关于公布2026年职工基本养老保险缴费基数上下限有关问题的通知",
+        "url": "https://hrss.gd.gov.cn/gkmlpt/content/4/4956/mmpost_4956863.html",
+        "publishedOn": "2026-09-17",
+        "retrievedAt": "2026-11-07T10:38:00.000Z",
+        "sha256": "a0adaddd320c533868125692ee64ba6acf97481d180a6da9a0589a2d82932bf7",
+        "evidence": "自2026年7月1日起，全省企业职工基本养老保险缴费基数上限调整为27603元，缴费基数下限调整为5521元。"
+      },
+      {
+        "title": "关于简易修改广州市职工医疗保险和生育保险筹资标准的通知",
+        "url": "https://www.gz.gov.cn/gzybj/gkmlpt/content/11/11029/post_11029015.html",
+        "publishedOn": "2026-09-20",
+        "retrievedAt": "2026-11-07T10:39:00.000Z",
+        "sha256": "7d56c50fa4ae2733897ed73c157683486cc81a9bf3f77a1102691b1f3629f51d",
+        "evidence": "在职职工个人应当按其缴费基数的2%按月足额缴纳职工基本医疗保险费。用人单位应当按其缴费基数的6%按月足额缴纳职工基本医疗保险费，并代扣代缴在职职工个人应当缴纳的职工基本医疗保险费。"
+      },
+      {
+        "title": "广州住房公积金管理中心关于2026年度住房公积金缴存调整有关问题的通知",
+        "url": "https://gjj.gz.gov.cn/gg/tzgg/content/post_10879601.html",
+        "publishedOn": "2026-06-30",
+        "retrievedAt": "2026-11-07T10:40:00.000Z",
+        "sha256": "1ad412448e3a813916c30a17bbba2309660d625d7011fc2fb20a517eb2779cf4",
+        "evidence": "调整后的缴存基数不低于本市最低工资标准（现行标准为2500元），不高于本市统计部门公布的2025年广州市职工月平均工资的3倍，即41697元。住房公积金缴存比例不低于5%，不高于12%。"
+      }
+    ],
+    "parameters": {
+      "socialBase": { "mode": "salary", "value": 0, "minimum": 5521, "maximum": 27603 },
+      "housingBase": { "mode": "salary", "value": 0, "minimum": 2500, "maximum": 41697 },
+      "rates": {
+        "pension": { "employee": 8, "employer": 16, "baseOverride": null },
+        "medical": {
+          "employee": 2,
+          "employer": 6.85,
+          "baseOverride": null,
+          "bounds": { "minimum": 6234, "maximum": 31170 }
+        },
+        "unemployment": {
+          "employee": 0.2,
+          "employer": 0.8,
+          "baseOverride": null,
+          "bounds": { "minimum": 2680, "maximum": 42933 }
+        },
+        "injury": {
+          "employee": 0,
+          "employer": 0.4,
+          "baseOverride": null,
+          "bounds": { "minimum": 2680, "maximum": 42933 }
+        },
+        "maternity": { "employee": 0, "employer": 0, "baseOverride": null },
+        "housing": { "employee": 5, "employer": 5, "baseOverride": null }
+      },
+      "medicalExtra": 0,
+      "maternityMerged": true
+    },
+    "assumptions": [
+      "养老保险基数上下限 5521–27603 元/月，自 2026年7月1日起执行，来源为广东省人社厅等三部门通知（粤人社发〔2026〕24号）。",
+      "养老保险单位16%、个人8%。",
+      "医疗保险单位6.85%（基本医疗6%＋生育0.85%）、个人2%，基数 6234–31170 元/月，来源为穗医保规字〔2026〕4号。",
+      "生育保险已并入医疗保险（含在单位6.85%中的0.85%），个人不缴生育保险费。",
+      "失业保险单位0.8%、个人0.2%，基数 2680–42933 元/月（自2026年9月1日起）。",
+      "工伤保险按行业八档基准费率 0.2%–1.4% 浮动，默认按 0.4% 估算。",
+      "住房公积金单位与个人缴存比例均为 5%–12% 区间自选（取整数值），默认按 5% 估算，基数 2500–41697 元/月。"
+    ]
+  }
+]
