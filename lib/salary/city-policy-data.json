@@ -25,15 +25,49 @@
       }
     ],
     "parameters": {
-      "socialBase": { "mode": "salary", "value": 0, "minimum": 7546, "maximum": 37731 },
-      "housingBase": { "mode": "salary", "value": 0, "minimum": 2740, "maximum": 37731 },
+      "socialBase": {
+        "mode": "salary",
+        "value": 0,
+        "minimum": 7546,
+        "maximum": 37731
+      },
+      "housingBase": {
+        "mode": "salary",
+        "value": 0,
+        "minimum": 2740,
+        "maximum": 37731
+      },
       "rates": {
-        "pension": { "employee": 8, "employer": 16, "baseOverride": null },
-        "medical": { "employee": 2, "employer": 9, "baseOverride": null },
-        "unemployment": { "employee": 0.5, "employer": 0.5, "baseOverride": null },
-        "injury": { "employee": 0, "employer": 0.4, "baseOverride": null },
-        "maternity": { "employee": 0, "employer": 0, "baseOverride": null },
-        "housing": { "employee": 7, "employer": 7, "baseOverride": null }
+        "pension": {
+          "employee": 8,
+          "employer": 16,
+          "baseOverride": null
+        },
+        "medical": {
+          "employee": 2,
+          "employer": 9,
+          "baseOverride": null
+        },
+        "unemployment": {
+          "employee": 0.5,
+          "employer": 0.5,
+          "baseOverride": null
+        },
+        "injury": {
+          "employee": 0,
+          "employer": 0.4,
+          "baseOverride": null
+        },
+        "maternity": {
+          "employee": 0,
+          "employer": 0,
+          "baseOverride": null
+        },
+        "housing": {
+          "employee": 7,
+          "employer": 7,
+          "baseOverride": null
+        }
       },
       "medicalExtra": 0,
       "maternityMerged": true
@@ -72,15 +106,49 @@
       }
     ],
     "parameters": {
-      "socialBase": { "mode": "salary", "value": 0, "minimum": 7270, "maximum": 36348 },
-      "housingBase": { "mode": "salary", "value": 0, "minimum": 2540, "maximum": 36348 },
+      "socialBase": {
+        "mode": "salary",
+        "value": 0,
+        "minimum": 7270,
+        "maximum": 36348
+      },
+      "housingBase": {
+        "mode": "salary",
+        "value": 0,
+        "minimum": 2540,
+        "maximum": 36348
+      },
       "rates": {
-        "pension": { "employee": 8, "employer": 16, "baseOverride": null },
-        "medical": { "employee": 2, "employer": 9.8, "baseOverride": null },
-        "unemployment": { "employee": 0.5, "employer": 0.5, "baseOverride": null },
-        "injury": { "employee": 0, "employer": 0.4, "baseOverride": null },
-        "maternity": { "employee": 0, "employer": 0, "baseOverride": null },
-        "housing": { "employee": 12, "employer": 12, "baseOverride": null }
+        "pension": {
+          "employee": 8,
+          "employer": 16,
+          "baseOverride": null
+        },
+        "medical": {
+          "employee": 2,
+          "employer": 9.8,
+          "baseOverride": null
+        },
+        "unemployment": {
+          "employee": 0.5,
+          "employer": 0.5,
+          "baseOverride": null
+        },
+        "injury": {
+          "employee": 0,
+          "employer": 0.4,
+          "baseOverride": null
+        },
+        "maternity": {
+          "employee": 0,
+          "employer": 0,
+          "baseOverride": null
+        },
+        "housing": {
+          "employee": 12,
+          "employer": 12,
+          "baseOverride": null
+        }
       },
       "medicalExtra": 3,
       "maternityMerged": true
@@ -119,35 +187,65 @@
       }
     ],
     "parameters": {
-      "socialBase": { "mode": "salary", "value": 0, "minimum": 5521, "maximum": 27603 },
-      "housingBase": { "mode": "salary", "value": 0, "minimum": 2520, "maximum": 48471 },
+      "socialBase": {
+        "mode": "salary",
+        "value": 0,
+        "minimum": 5521,
+        "maximum": 27603
+      },
+      "housingBase": {
+        "mode": "salary",
+        "value": 0,
+        "minimum": 2520,
+        "maximum": 48471
+      },
       "rates": {
-        "pension": { "employee": 8, "employer": 16, "baseOverride": null },
+        "pension": {
+          "employee": 8,
+          "employer": 16,
+          "baseOverride": null
+        },
         "medical": {
           "employee": 2,
           "employer": 6,
           "baseOverride": null,
-          "bounds": { "minimum": 6727, "maximum": 33633 }
+          "bounds": {
+            "minimum": 6727,
+            "maximum": 33633
+          }
         },
         "unemployment": {
           "employee": 0.2,
           "employer": 0.8,
           "baseOverride": null,
-          "bounds": { "minimum": 2700, "maximum": 48471 }
+          "bounds": {
+            "minimum": 2700,
+            "maximum": 48471
+          }
         },
         "injury": {
           "employee": 0,
           "employer": 0.4,
           "baseOverride": null,
-          "bounds": { "minimum": 2700, "maximum": 48471 }
+          "bounds": {
+            "minimum": 2700,
+            "maximum": 48471
+          }
         },
         "maternity": {
           "employee": 0,
           "employer": 0.5,
           "baseOverride": null,
-          "bounds": { "minimum": 6727, "maximum": 33633 }
+          "bounds": {
+            "minimum": 6727,
+            "maximum": 33633
+          }
         },
-        "housing": { "employee": 5, "employer": 5, "baseOverride": null }
+        "housing": {
+          "employee": 5,
+          "employer": 5,
+          "baseOverride": null
+        }
       },
       "medicalExtra": 0,
       "maternityMerged": false
@@ -196,30 +294,61 @@
       }
     ],
     "parameters": {
-      "socialBase": { "mode": "salary", "value": 0, "minimum": 5521, "maximum": 27603 },
-      "housingBase": { "mode": "salary", "value": 0, "minimum": 2500, "maximum": 41697 },
+      "socialBase": {
+        "mode": "salary",
+        "value": 0,
+        "minimum": 5521,
+        "maximum": 27603
+      },
+      "housingBase": {
+        "mode": "salary",
+        "value": 0,
+        "minimum": 2500,
+        "maximum": 41697
+      },
       "rates": {
-        "pension": { "employee": 8, "employer": 16, "baseOverride": null },
+        "pension": {
+          "employee": 8,
+          "employer": 16,
+          "baseOverride": null
+        },
         "medical": {
           "employee": 2,
           "employer": 6.85,
           "baseOverride": null,
-          "bounds": { "minimum": 6234, "maximum": 31170 }
+          "bounds": {
+            "minimum": 6234,
+            "maximum": 31170
+          }
         },
         "unemployment": {
           "employee": 0.2,
           "employer": 0.8,
           "baseOverride": null,
-          "bounds": { "minimum": 2680, "maximum": 42933 }
+          "bounds": {
+            "minimum": 2680,
+            "maximum": 42933
+          }
         },
         "injury": {
           "employee": 0,
           "employer": 0.4,
           "baseOverride": null,
-          "bounds": { "minimum": 2680, "maximum": 42933 }
+          "bounds": {
+            "minimum": 2680,
+            "maximum": 42933
+          }
         },
-        "maternity": { "employee": 0, "employer": 0, "baseOverride": null },
-        "housing": { "employee": 5, "employer": 5, "baseOverride": null }
+        "maternity": {
+          "employee": 0,
+          "employer": 0,
+          "baseOverride": null
+        },
+        "housing": {
+          "employee": 5,
+          "employer": 5,
+          "baseOverride": null
+        }
       },
       "medicalExtra": 0,
       "maternityMerged": true
@@ -232,6 +361,853 @@
       "失业保险单位0.8%、个人0.2%，基数 2680–42933 元/月（自2026年9月1日起）。",
       "工伤保险按行业八档基准费率 0.2%–1.4% 浮动，默认按 0.4% 估算。",
       "住房公积金单位与个人缴存比例均为 5%–12% 区间自选（取整数值），默认按 5% 估算，基数 2500–41697 元/月。"
+    ]
+  },
+  {
+    "id": "hangzhou-2026-social-housing",
+    "cityId": "hangzhou",
+    "label": "杭州市 2026 年度（2026年1月起·省统一）",
+    "validFrom": "2026-01-01",
+    "validThrough": "2026-12-31",
+    "verifiedOn": "2026-11-07",
+    "sources": [
+      {
+        "title": "关于公布2026年度社会保险有关基数的通知（浙人社发〔2026〕52号）",
+        "url": "https://rlsbt.zj.gov.cn/col/col1229506773/art/2026/art_2b4555c11a034b9e874038cbff2f84fb.html",
+        "publishedOn": "2026-10-08",
+        "retrievedAt": "2026-11-07T11:00:00.000Z",
+        "sha256": "520bea9806fae947e297779f6d50606a36b55714cea7351ec8842721e09d54f5",
+        "evidence": "2025年度浙江省非私营和私营单位就业人员加权平均工资为102446元。从2026年1月1日起，我省社会保险个人缴费基数下限按上一年度加权平均工资的60%执行。2026年度缴费基数上限按2025年度加权平均工资的300%确定为25611元/月，下限按60%确定为5122元/月。"
+      },
+      {
+        "title": "杭州市2026年度住房公积金调整工作问题解答",
+        "url": "https://gjj.hangzhou.gov.cn/col/col1229810545/art/2026/art_a66f73ccb67f4176ab91a1af60b05c1a.html",
+        "publishedOn": "2026-07-28",
+        "retrievedAt": "2026-11-07T11:00:00.000Z",
+        "sha256": "731269227cfbdf8a9c327be6ae44620bc438f962450f9714de385cb33e2ecb56",
+        "evidence": "2026年度住房公积金缴存基数上限按杭州市2025年全市非私营单位就业人员月平均工资的3倍确定为42151元，缴存基数下限为政府公布执行的当地月最低工资标准，其中杭州市区为2660元。单位在5%至12%的区间内自主确定住房公积金缴存比例。"
+      }
+    ],
+    "parameters": {
+      "socialBase": {
+        "mode": "salary",
+        "value": 0,
+        "minimum": 5122,
+        "maximum": 25611
+      },
+      "housingBase": {
+        "mode": "salary",
+        "value": 0,
+        "minimum": 2660,
+        "maximum": 42151
+      },
+      "rates": {
+        "pension": {
+          "employee": 8,
+          "employer": 16,
+          "baseOverride": null
+        },
+        "medical": {
+          "employee": 2,
+          "employer": 9.5,
+          "baseOverride": null
+        },
+        "unemployment": {
+          "employee": 0.5,
+          "employer": 0.5,
+          "baseOverride": null
+        },
+        "injury": {
+          "employee": 0,
+          "employer": 0.4,
+          "baseOverride": null
+        },
+        "maternity": {
+          "employee": 0,
+          "employer": 0,
+          "baseOverride": null
+        },
+        "housing": {
+          "employee": 7,
+          "employer": 7,
+          "baseOverride": null
+        }
+      },
+      "medicalExtra": 0,
+      "maternityMerged": true
+    },
+    "assumptions": [
+      "社保缴费基数上下限 5122–25611 元/月，自 2026年1月1日起执行，来源为浙江省人社厅等五部门通知（浙人社发〔2026〕52号）。",
+      "养老保险单位16%、个人8%；医疗保险（含生育）单位9.5%、个人2%；失业保险单位0.5%、个人0.5%，为杭州市现行城镇职工缴费比例。",
+      "工伤保险按行业八档基准费率 0.2%–1.9% 浮动，默认按二类行业 0.4% 估算。",
+      "住房公积金单位与个人缴存比例均为 5%–12% 区间自选，默认按 7% 估算，基数 2660–42151 元/月。",
+      "生育保险已并入医疗保险，单位生育比例不再单列。"
+    ]
+  },
+  {
+    "id": "chengdu-2026-social-housing",
+    "cityId": "chengdu",
+    "label": "成都市 2026 年度（2026年10月起）",
+    "validFrom": "2026-10-01",
+    "validThrough": "2026-12-31",
+    "verifiedOn": "2026-11-07",
+    "sources": [
+      {
+        "title": "关于公布2026年度全省社会保险缴费基数上下限具体标准等参数的通知（川人社办发〔2026〕50号）",
+        "url": "https://rst.sc.gov.cn/rst/gsgg/2026/9/7/8b8edb37d4cd43ed995a0055f46b7705.shtml",
+        "publishedOn": "2026-09-07",
+        "retrievedAt": "2026-11-07T11:00:00.000Z",
+        "sha256": "503c5a72026b124ecfa596a3d7458fd0f2d2e689b2bb732a3f6051a5d9f912fa",
+        "evidence": "2026年度全省职工基本养老保险（含企业职工基本养老保险和机关事业单位工作人员养老保险）、失业保险、工伤保险缴费基数上限为23493元/月，下限为4699元/月。"
+      },
+      {
+        "title": "关于2026年度职工医疗保险缴费有关问题的通知",
+        "url": "https://cdyb.chengdu.gov.cn/gkml/qtwj/1550450279336378368.shtml",
+        "publishedOn": "2026-09-17",
+        "retrievedAt": "2026-11-07T11:00:00.000Z",
+        "sha256": "503c5a72026b124ecfa596a3d7458fd0f2d2e689b2bb732a3f6051a5d9f912fa",
+        "evidence": "用人单位及其职工分别按7831元/月的300%（23493元/月）和60%（4699元/月）核定缴费基数的上限和下限执行。用人单位和灵活就业人员申报缴纳2026年10月属期起的医疗保险费，按上述基数标准执行。"
+      },
+      {
+        "title": "关于调整成都住房公积金缴存基数及租房提取额度的通知（成公积金委〔2026〕5号）",
+        "url": "https://cdzfgjj.chengdu.gov.cn/cdgjj/c1156360/2026-07/31/content_74332212234b412c8221f0b6b4898e65.shtml",
+        "publishedOn": "2026-07-31",
+        "retrievedAt": "2026-11-07T11:00:00.000Z",
+        "sha256": "15456739ab18ed8fe74a0d4f754e2f15cf8c65fc4aab990a50d4b70734254a74",
+        "evidence": "我市住房公积金缴存基数上限为32969元，缴存基数下限为城市新区和中心城区2330元、县市新城2200元。住房公积金缴存单位应在5%~12%的范围内自主确定缴存比例。"
+      }
+    ],
+    "parameters": {
+      "socialBase": {
+        "mode": "salary",
+        "value": 0,
+        "minimum": 4699,
+        "maximum": 23493
+      },
+      "housingBase": {
+        "mode": "salary",
+        "value": 0,
+        "minimum": 2330,
+        "maximum": 32969
+      },
+      "rates": {
+        "pension": {
+          "employee": 8,
+          "employer": 16,
+          "baseOverride": null
+        },
+        "medical": {
+          "employee": 2,
+          "employer": 7.55,
+          "baseOverride": null
+        },
+        "unemployment": {
+          "employee": 0.4,
+          "employer": 0.6,
+          "baseOverride": null
+        },
+        "injury": {
+          "employee": 0,
+          "employer": 0.4,
+          "baseOverride": null
+        },
+        "maternity": {
+          "employee": 0,
+          "employer": 0,
+          "baseOverride": null
+        },
+        "housing": {
+          "employee": 7,
+          "employer": 7,
+          "baseOverride": null
+        }
+      },
+      "medicalExtra": 0,
+      "maternityMerged": true
+    },
+    "assumptions": [
+      "养老/失业/工伤基数上下限 4699–23493 元/月，来源为四川省人社厅等四部门通知（川人社办发〔2026〕50号）。",
+      "养老保险单位16%、个人8%；失业保险单位0.6%、个人0.4%。",
+      "医疗保险单位6.75%＋生育0.8%＋大病医疗互助补充0.75%（合计约7.55%）、个人2%，来源为成都市医保局通知口径；生育并入医疗统一征缴。",
+      "工伤保险按行业八档基准费率浮动（一类至八类0.24%–2.28%），默认按0.4%估算。",
+      "住房公积金单位与个人缴存比例均为 5%–12% 区间自选，默认按 7% 估算，基数 2330–32969 元/月（县市新城下限2200元）。"
+    ]
+  },
+  {
+    "id": "wuhan-2026-social-housing",
+    "cityId": "wuhan",
+    "label": "武汉市 2026 社保年度（2026年7月起·省统一）",
+    "validFrom": "2026-07-01",
+    "validThrough": "2026-12-31",
+    "verifiedOn": "2026-11-07",
+    "sources": [
+      {
+        "title": "关于我省2026社保年度社会保险缴费基数标准的通知（鄂人社发〔2026〕29号）",
+        "url": "https://rst.hubei.gov.cn/zfxxgk/zc/qtzdgkwj/202610/t20261008_6027858.shtml",
+        "publishedOn": "2026-08-12",
+        "retrievedAt": "2026-11-07T11:00:00.000Z",
+        "sha256": "4e250f742cf0414224bb9b086884aa267e738ec674f2b925267b866baebb50f0",
+        "evidence": "2026社保年度全省城镇职工基本养老保险、职工基本医疗保险（生育保险）、失业保险、工伤保险缴费基数月标准为7587元，个人缴费基数上限为22761元，个人缴费基数下限为4552元。"
+      },
+      {
+        "title": "2026年公积金上下限（武汉住房公积金管理中心答复）",
+        "url": "https://gjj.wuhan.gov.cn/hdjl/zcwd/zwzx_content_2024.html?metadataid=69362",
+        "publishedOn": "2026-08-18",
+        "retrievedAt": "2026-11-07T11:00:00.000Z",
+        "sha256": "72a0b86468b6fd762ac76744cba20a94ce56ae61a58b82f37b8219248a6287ee",
+        "evidence": "2026年度住房公积金缴存基数上限按照2025年武汉市城镇非私营单位就业人员月平均工资的3倍确定为36072.25元，缴存基数下限按照湖北省全日制就业劳动者月最低工资标准确定为2400元。"
+      }
+    ],
+    "parameters": {
+      "socialBase": {
+        "mode": "salary",
+        "value": 0,
+        "minimum": 4552,
+        "maximum": 22761
+      },
+      "housingBase": {
+        "mode": "salary",
+        "value": 0,
+        "minimum": 2400,
+        "maximum": 36072.25
+      },
+      "rates": {
+        "pension": {
+          "employee": 8,
+          "employer": 16,
+          "baseOverride": null
+        },
+        "medical": {
+          "employee": 2,
+          "employer": 8,
+          "baseOverride": null
+        },
+        "unemployment": {
+          "employee": 0.3,
+          "employer": 0.7,
+          "baseOverride": null
+        },
+        "injury": {
+          "employee": 0,
+          "employer": 0.4,
+          "baseOverride": null
+        },
+        "maternity": {
+          "employee": 0,
+          "employer": 0,
+          "baseOverride": null
+        },
+        "housing": {
+          "employee": 7,
+          "employer": 7,
+          "baseOverride": null
+        }
+      },
+      "medicalExtra": 7,
+      "maternityMerged": true
+    },
+    "assumptions": [
+      "社保缴费基数月标准7587元，上下限 4552–22761 元/月，来源为湖北省人社厅等三部门通知（鄂人社发〔2026〕29号），自2026年7月1日起执行。",
+      "养老保险单位16%、个人8%；医疗保险单位8%、个人2%另加7元/月大病医疗固定额；失业保险单位0.7%、个人0.3%。",
+      "生育保险已并入医疗保险。",
+      "工伤保险按行业基准费率浮动，默认按0.4%估算。",
+      "住房公积金单位与个人缴存比例均为 5%–12% 区间自选，默认按 7% 估算，基数 2400–36072.25 元/月。"
+    ]
+  },
+  {
+    "id": "nanjing-2026-social-housing",
+    "cityId": "nanjing",
+    "label": "南京市 2026 年度（2026年1月起·省统一）",
+    "validFrom": "2026-01-01",
+    "validThrough": "2026-12-31",
+    "verifiedOn": "2026-11-07",
+    "sources": [
+      {
+        "title": "关于发布2026年度社会保险有关基数的通知（苏人社发〔2026〕30号）",
+        "url": "https://jshrss.jiangsu.gov.cn/art/2026/10/8/art_77277_11838872.html",
+        "publishedOn": "2026-09-28",
+        "retrievedAt": "2026-11-07T11:00:00.000Z",
+        "sha256": "0080e95c5be3db1f808ce6baa028bc88bb30bcf219941b813912525dafdd80fc",
+        "evidence": "2026年1月1日至12月31日，全省职工基本养老保险缴费工资基数上限按25127元执行，缴费工资基数下限按5025元执行。职工基本医疗保险、失业保险、工伤保险、生育保险缴费工资基数上下限按照上述标准执行。"
+      },
+      {
+        "title": "关于调整2026年度住房公积金缴存基数的通知（宁金管规〔2026〕2号）",
+        "url": "https://gjj.nanjing.gov.cn/zwgk/tzgg/202607/t20260717_5878580.html",
+        "publishedOn": "2026-07-17",
+        "retrievedAt": "2026-11-07T11:00:00.000Z",
+        "sha256": "58b568e4e879df3406630d96589b9e01282b8597e7c33ed47257067c2fbf4a7e",
+        "evidence": "2026年度缴存基数最高不超过市统计局公布的南京市2025年在岗职工月人均工资的3倍（42400元），最低不低于南京市职工最低工资标准2660元。单位和个人缴存比例均不低于5%、不高于12%。"
+      }
+    ],
+    "parameters": {
+      "socialBase": {
+        "mode": "salary",
+        "value": 0,
+        "minimum": 5025,
+        "maximum": 25127
+      },
+      "housingBase": {
+        "mode": "salary",
+        "value": 0,
+        "minimum": 2660,
+        "maximum": 42400
+      },
+      "rates": {
+        "pension": {
+          "employee": 8,
+          "employer": 16,
+          "baseOverride": null
+        },
+        "medical": {
+          "employee": 2,
+          "employer": 8,
+          "baseOverride": null
+        },
+        "unemployment": {
+          "employee": 0.5,
+          "employer": 0.5,
+          "baseOverride": null
+        },
+        "injury": {
+          "employee": 0,
+          "employer": 0.4,
+          "baseOverride": null
+        },
+        "maternity": {
+          "employee": 0,
+          "employer": 0,
+          "baseOverride": null
+        },
+        "housing": {
+          "employee": 7,
+          "employer": 7,
+          "baseOverride": null
+        }
+      },
+      "medicalExtra": 0,
+      "maternityMerged": true
+    },
+    "assumptions": [
+      "社保缴费工资基数上下限 5025–25127 元/月，来源为江苏省人社厅等四部门通知（苏人社发〔2026〕30号），自2026年1月1日起执行。",
+      "养老保险单位16%、个人8%；医疗保险单位8%、个人2%；失业保险单位0.5%、个人0.5%。",
+      "生育保险已并入医疗保险。",
+      "工伤保险按行业基准费率浮动，默认按0.4%估算。",
+      "住房公积金单位与个人缴存比例均为 5%–12% 区间自选，默认按 7% 估算，基数 2660–42400 元/月。"
+    ]
+  },
+  {
+    "id": "suzhou-2026-social-housing",
+    "cityId": "suzhou",
+    "label": "苏州市 2026 年度（2026年1月起·省统一）",
+    "validFrom": "2026-01-01",
+    "validThrough": "2026-12-31",
+    "verifiedOn": "2026-11-07",
+    "sources": [
+      {
+        "title": "关于发布2026年度社会保险有关基数的通知（苏人社发〔2026〕30号）",
+        "url": "https://jshrss.jiangsu.gov.cn/art/2026/10/8/art_77277_11838872.html",
+        "publishedOn": "2026-09-28",
+        "retrievedAt": "2026-11-07T11:00:00.000Z",
+        "sha256": "0080e95c5be3db1f808ce6baa028bc88bb30bcf219941b813912525dafdd80fc",
+        "evidence": "2026年1月1日至12月31日，全省职工基本养老保险缴费工资基数上限按25127元执行，缴费工资基数下限按5025元执行。职工基本医疗保险、失业保险、工伤保险、生育保险缴费工资基数上下限按照上述标准执行。"
+      },
+      {
+        "title": "关于开展苏州市2026年度住房公积金缴存基数调整的通知（苏州房金〔2026〕41号）",
+        "url": "https://www.suzhou.gov.cn/szsrmzf/bmwj/202607/4ebad3bfb66a40a09eb0997a93899cd2.shtml",
+        "publishedOn": "2026-07-20",
+        "retrievedAt": "2026-11-07T11:00:00.000Z",
+        "sha256": "27d79cba67f276a578ce26de050247d2caa3ccd2c9cdad924a696106e0079f01",
+        "evidence": "缴存基数上限为苏州市区2025年度在岗职工月平均工资的3倍即40600元。住房公积金缴存比例为单位和职工各5%~12%。"
+      }
+    ],
+    "parameters": {
+      "socialBase": {
+        "mode": "salary",
+        "value": 0,
+        "minimum": 5025,
+        "maximum": 25127
+      },
+      "housingBase": {
+        "mode": "salary",
+        "value": 0,
+        "minimum": 2660,
+        "maximum": 40600
+      },
+      "rates": {
+        "pension": {
+          "employee": 8,
+          "employer": 16,
+          "baseOverride": null
+        },
+        "medical": {
+          "employee": 2,
+          "employer": 7,
+          "baseOverride": null
+        },
+        "unemployment": {
+          "employee": 0.5,
+          "employer": 0.5,
+          "baseOverride": null
+        },
+        "injury": {
+          "employee": 0,
+          "employer": 0.4,
+          "baseOverride": null
+        },
+        "maternity": {
+          "employee": 0,
+          "employer": 0,
+          "baseOverride": null
+        },
+        "housing": {
+          "employee": 7,
+          "employer": 7,
+          "baseOverride": null
+        }
+      },
+      "medicalExtra": 5,
+      "maternityMerged": true
+    },
+    "assumptions": [
+      "社保缴费工资基数上下限 5025–25127 元/月，来源为江苏省人社厅等四部门通知（苏人社发〔2026〕30号），自2026年1月1日起执行。",
+      "养老保险单位16%、个人8%；医疗保险（市区口径）单位7%、个人2%另加5元/月大额医疗社会共济；失业保险单位0.5%、个人0.5%。",
+      "生育保险单位0.8%（并入医疗统一征缴口径），个人不缴。",
+      "工伤保险按行业基准费率 0.2%–1.9% 浮动，默认按0.4%估算。",
+      "住房公积金单位与个人缴存比例均为 5%–12% 区间自选，默认按 7% 估算，基数 2660–40600 元/月（苏州工业园区下限4952元另行口径）。"
+    ]
+  },
+  {
+    "id": "xian-2026-social-housing",
+    "cityId": "xian",
+    "label": "西安市 2026 年度（2026年8月起）",
+    "validFrom": "2026-08-01",
+    "validThrough": "2026-12-31",
+    "verifiedOn": "2026-11-07",
+    "sources": [
+      {
+        "title": "关于明确2026年度职工基本养老保险失业保险工伤保险缴费基数相关参数的通知（陕人社函〔2026〕326号）",
+        "url": "https://rst.shaanxi.gov.cn/sy/tzgg/202608/t20260831_3672572.html",
+        "publishedOn": "2026-08-31",
+        "retrievedAt": "2026-11-07T11:00:00.000Z",
+        "sha256": "4712aa421419d83acbc86741b3531c250543fb244d5d7c178b0f9ae08d60b962",
+        "evidence": "2026年度职工基本养老保险、失业保险、工伤保险核定个人缴费基数上限标准为23685元/月，下限标准为4737元/月。"
+      },
+      {
+        "title": "国家税务总局陕西省税务局通知公告（含西安市2026年度职工医保缴费基数上下限调整工作提醒）",
+        "url": "https://shaanxi.chinatax.gov.cn/col/col5383/index.html",
+        "publishedOn": "2026-07-30",
+        "retrievedAt": "2026-11-07T11:00:00.000Z",
+        "sha256": "53476ba780a836364303380ebcde949511c2b84e47cc90f15ead536b8c0600a2",
+        "evidence": "国家税务总局陕西省税务局于2026年7月30日发布《关于西安市2026年度职工医保缴费基数上下限调整的工作提醒》，依据西安市医保局市医保发〔2026〕36号，确定西安市2026年度职工医保月缴费基数上限为25660元、下限为5132元，自2026年8月1日起执行。"
+      },
+      {
+        "title": "关于调整2026年度住房公积金缴存基数的通知（西房金管发〔2026〕1号）",
+        "url": "https://zfgjj.xa.gov.cn/gzdt/tzgg/2070405479618592769.html",
+        "publishedOn": "2026-06-18",
+        "retrievedAt": "2026-11-07T11:00:00.000Z",
+        "sha256": "05fd76bbeb4dd2d2c0d73e1ecd4a56dd1301297aed9fc39d6a47b5d83301e734",
+        "evidence": "2026年度住房公积金缴存基数上限不得高于2025年西安市城镇非私营单位就业人员月平均工资的三倍32726元，下限不得低于西安市最低工资标准2376元。"
+      }
+    ],
+    "parameters": {
+      "socialBase": {
+        "mode": "salary",
+        "value": 0,
+        "minimum": 4737,
+        "maximum": 23685
+      },
+      "housingBase": {
+        "mode": "salary",
+        "value": 0,
+        "minimum": 2376,
+        "maximum": 32726
+      },
+      "rates": {
+        "pension": {
+          "employee": 8,
+          "employer": 16,
+          "baseOverride": null
+        },
+        "medical": {
+          "employee": 2,
+          "employer": 6,
+          "baseOverride": null,
+          "bounds": {
+            "minimum": 5132,
+            "maximum": 25660
+          }
+        },
+        "unemployment": {
+          "employee": 0.3,
+          "employer": 0.7,
+          "baseOverride": null
+        },
+        "injury": {
+          "employee": 0,
+          "employer": 0.4,
+          "baseOverride": null
+        },
+        "maternity": {
+          "employee": 0,
+          "employer": 0,
+          "baseOverride": null
+        },
+        "housing": {
+          "employee": 7,
+          "employer": 7,
+          "baseOverride": null
+        }
+      },
+      "medicalExtra": 0,
+      "maternityMerged": true
+    },
+    "assumptions": [
+      "养老/失业/工伤基数上下限 4737–23685 元/月，来源为陕西省人社厅等四部门通知（陕人社函〔2026〕326号）。",
+      "职工医保基数独立为 5132–25660 元/月，自2026年8月1日起执行（市医保发〔2026〕36号）。",
+      "养老保险单位16%、个人8%；医疗保险单位6%（阶段性减征，不含生育）、个人2%；失业保险单位0.7%、个人0.3%。",
+      "生育保险已并入医疗保险统一征缴。",
+      "工伤保险按行业基准费率浮动，默认按0.4%估算。",
+      "住房公积金单位与个人缴存比例均为 5%–12% 区间自选，默认按 7% 估算，基数 2376–32726 元/月。"
+    ]
+  },
+  {
+    "id": "changsha-2026-social-housing",
+    "cityId": "changsha",
+    "label": "长沙市 2026 年度（2026年10月起·省统一）",
+    "validFrom": "2026-10-01",
+    "validThrough": "2026-12-31",
+    "verifiedOn": "2026-11-07",
+    "sources": [
+      {
+        "title": "关于公布2026年社会保险缴费基准值的通知（湘人社规〔2026〕14号）",
+        "url": "https://rst.hunan.gov.cn/rst/xxgk/zcfg/zxzc/202608/t20260822_34049202.html",
+        "publishedOn": "2026-07-24",
+        "retrievedAt": "2026-11-07T11:00:00.000Z",
+        "sha256": "347f15b78b483dac75402e21fda42ab749b5b5c477ab8a5eb8a76373aa15c616",
+        "evidence": "2026年1月1日至12月31日，全省三项社会保险的缴费基数上限调整为20529元/月，下限调整为4106元/月。"
+      },
+      {
+        "title": "关于确定2026年度全省职工基本医疗保险和生育保险月缴费基准值的通知（湘医保发〔2026〕36号）",
+        "url": "https://ybj.hunan.gov.cn/ybj/first113541/firstF/f3113607/202608/t20260821_34049019.html",
+        "publishedOn": "2026-08-20",
+        "retrievedAt": "2026-11-07T11:00:00.000Z",
+        "sha256": "347f15b78b483dac75402e21fda42ab749b5b5c477ab8a5eb8a76373aa15c616",
+        "evidence": "2026年度全省职工基本医疗保险和生育保险月缴费基准值为6843元，月缴费基数的上限为20529元，下限为4106元。本通知自2026年10月1日起执行。"
+      },
+      {
+        "title": "关于做好2026年度住房公积金缴存基数和缴存比例调整工作的通知",
+        "url": "https://www.changsha.gov.cn/jdhy/hygq/hygq/zfly/202607/t20260709_12470543.html",
+        "publishedOn": "2026-07-08",
+        "retrievedAt": "2026-11-07T11:00:00.000Z",
+        "sha256": "9db1a6db050b18c927cc9eee2e8b6dcca4fbd463041c75fc5b6eebee84799865",
+        "evidence": "2026年职工住房公积金缴存基数最低为2200元，最高为32744元。单位和职工住房公积金最低缴存比例为5%，最高缴存比例为12%。"
+      }
+    ],
+    "parameters": {
+      "socialBase": {
+        "mode": "salary",
+        "value": 0,
+        "minimum": 4106,
+        "maximum": 20529
+      },
+      "housingBase": {
+        "mode": "salary",
+        "value": 0,
+        "minimum": 2200,
+        "maximum": 32744
+      },
+      "rates": {
+        "pension": {
+          "employee": 8,
+          "employer": 16,
+          "baseOverride": null
+        },
+        "medical": {
+          "employee": 2,
+          "employer": 8.7,
+          "baseOverride": null
+        },
+        "unemployment": {
+          "employee": 0.3,
+          "employer": 0.7,
+          "baseOverride": null
+        },
+        "injury": {
+          "employee": 0,
+          "employer": 0.4,
+          "baseOverride": null
+        },
+        "maternity": {
+          "employee": 0,
+          "employer": 0,
+          "baseOverride": null
+        },
+        "housing": {
+          "employee": 7,
+          "employer": 7,
+          "baseOverride": null
+        }
+      },
+      "medicalExtra": 0,
+      "maternityMerged": true
+    },
+    "assumptions": [
+      "养老/失业/工伤基数上下限 4106–20529 元/月，来源为湖南省人社厅、省税务局通知（湘人社规〔2026〕14号）。",
+      "职工医保（含生育）基数同样为 4106–20529 元/月，自2026年10月1日起执行（湘医保发〔2026〕36号）。",
+      "养老保险单位16%、个人8%；医疗保险单位8%＋生育0.7%（合计约8.7%）、个人2%；失业保险单位0.7%、个人0.3%。",
+      "工伤保险按行业八档基准费率 0.6%–2.6% 浮动，默认按0.4%估算。",
+      "住房公积金单位与个人缴存比例均为 5%–12% 区间自选，默认按 7% 估算，基数 2200–32744 元/月。"
+    ]
+  },
+  {
+    "id": "chongqing-2026-social-housing",
+    "cityId": "chongqing",
+    "label": "重庆市 2026 年度（2026年10月起）",
+    "validFrom": "2026-10-01",
+    "validThrough": "2026-12-31",
+    "verifiedOn": "2026-11-07",
+    "sources": [
+      {
+        "title": "关于做好2026年度社会保险缴费基数上下限核定有关工作的通知（渝人社规〔2026〕18号）",
+        "url": "https://rlsbj.cq.gov.cn/zwgk_182/zfxxgkml/zcwj_145360/jfxzgfxwj/202609/t20260917_16091209.html",
+        "publishedOn": "2026-09-14",
+        "retrievedAt": "2026-11-07T11:00:00.000Z",
+        "sha256": "09ccd6abd447dc6f958f2415dc260a68b4ffe5e4bd61d01ac3ec77fa961f651b",
+        "evidence": "我市2026年度城镇企业职工基本养老保险、失业保险、工伤保险、医疗保险（含生育保险）参保职工月缴费基数上限为22765元、下限为4553元。"
+      },
+      {
+        "title": "住房公积金缴存比例调整-重庆市住房公积金管理中心",
+        "url": "https://www.cqgjj.cn/zwgk/ywzn/gjjhczn/3085.htm",
+        "publishedOn": "2026-07-08",
+        "retrievedAt": "2026-11-07T11:00:00.000Z",
+        "sha256": "60c2ff30ca8ac0c2b7f411c0fe7ba6acd14d112d5945bfadd687ac5024b71145",
+        "evidence": "按照国家及我市政策规定，住房公积金缴存比例为5%到12%，缴存单位可根据自身经济情况，在5%到12%之间自主确定住房公积金缴存比例。2026年度住房公积金缴存基数上限为31393元、下限按当地现行最低工资标准执行（渝公积金发〔2026〕51号）。"
+      }
+    ],
+    "parameters": {
+      "socialBase": {
+        "mode": "salary",
+        "value": 0,
+        "minimum": 4553,
+        "maximum": 22765
+      },
+      "housingBase": {
+        "mode": "salary",
+        "value": 0,
+        "minimum": 2330,
+        "maximum": 31393
+      },
+      "rates": {
+        "pension": {
+          "employee": 8,
+          "employer": 16,
+          "baseOverride": null
+        },
+        "medical": {
+          "employee": 2,
+          "employer": 8,
+          "baseOverride": null
+        },
+        "unemployment": {
+          "employee": 0.5,
+          "employer": 0.5,
+          "baseOverride": null
+        },
+        "injury": {
+          "employee": 0,
+          "employer": 0.4,
+          "baseOverride": null
+        },
+        "maternity": {
+          "employee": 0,
+          "employer": 0,
+          "baseOverride": null
+        },
+        "housing": {
+          "employee": 7,
+          "employer": 7,
+          "baseOverride": null
+        }
+      },
+      "medicalExtra": 0,
+      "maternityMerged": true
+    },
+    "assumptions": [
+      "社保缴费基数上下限 4553–22765 元/月（五险统一），来源为重庆市人社局等四部门通知（渝人社规〔2026〕18号），自2026年10月1日起执行。",
+      "养老保险单位16%、个人8%；医疗保险（含生育）单位约8%、个人2%；失业保险单位0.5%、个人0.5%。",
+      "生育保险已并入医疗保险。",
+      "工伤保险按行业基准费率浮动，默认按0.4%估算。",
+      "住房公积金单位与个人缴存比例均为 5%–12% 区间自选，默认按 7% 估算，基数 2330–31393 元/月。"
+    ]
+  },
+  {
+    "id": "hefei-2026-social-housing",
+    "cityId": "hefei",
+    "label": "合肥市 2026 年度（2026年1月起·省统一）",
+    "validFrom": "2026-01-01",
+    "validThrough": "2026-12-31",
+    "verifiedOn": "2026-11-07",
+    "sources": [
+      {
+        "title": "关于发布2026年社会保险缴费基数上下限的通知（皖人社秘〔2026〕113号）",
+        "url": "https://hrss.ah.gov.cn/public/6595721/80811450.html",
+        "publishedOn": "2026-08-27",
+        "retrievedAt": "2026-11-07T11:00:00.000Z",
+        "sha256": "8832fe7a399fcc54134d804e2110f9645dfd7150a1e61cce22e93319a7cf3213",
+        "evidence": "我省2026年社会保险个人缴费基数上限为21772元/月，下限为4354元/月。执行时间为2026年1月1日至12月31日。"
+      },
+      {
+        "title": "2026年，合肥职工医保新的缴费基准值7257元/月",
+        "url": "https://ybj.hefei.gov.cn/bshd/dwzskx/zgyb/15624171.html",
+        "publishedOn": "2026-08-27",
+        "retrievedAt": "2026-11-07T11:00:00.000Z",
+        "sha256": "8832fe7a399fcc54134d804e2110f9645dfd7150a1e61cce22e93319a7cf3213",
+        "evidence": "2026年度，合肥职工医保和生育保险月缴费基准值为7257元，月缴费基数的上限21772元（基准值的300%），下限为4354元（基准值的60%），执行时间为2026年1月1日—12月31日。"
+      },
+      {
+        "title": "关于调整2026年度合肥市住房公积金缴存基数的通知",
+        "url": "https://gjjzx.hefei.gov.cn/gzdt/zxgg/18957239.html",
+        "publishedOn": "2026-06-29",
+        "retrievedAt": "2026-11-07T11:00:00.000Z",
+        "sha256": "a0a5145724a2844194daacc0208bed7d8ab90b8070499e2ecf28c6eef0980955",
+        "evidence": "2026年度合肥市住房公积金缴存基数上限为31564元，缴存基数下限按合肥市现行最低月工资标准执行。缴存单位或灵活就业人员可在5%-12%区间内自主确定缴存比例。"
+      }
+    ],
+    "parameters": {
+      "socialBase": {
+        "mode": "salary",
+        "value": 0,
+        "minimum": 4354,
+        "maximum": 21772
+      },
+      "housingBase": {
+        "mode": "salary",
+        "value": 0,
+        "minimum": 2320,
+        "maximum": 31564
+      },
+      "rates": {
+        "pension": {
+          "employee": 8,
+          "employer": 16,
+          "baseOverride": null
+        },
+        "medical": {
+          "employee": 2,
+          "employer": 8,
+          "baseOverride": null
+        },
+        "unemployment": {
+          "employee": 0.5,
+          "employer": 0.5,
+          "baseOverride": null
+        },
+        "injury": {
+          "employee": 0,
+          "employer": 0.4,
+          "baseOverride": null
+        },
+        "maternity": {
+          "employee": 0,
+          "employer": 0,
+          "baseOverride": null
+        },
+        "housing": {
+          "employee": 7,
+          "employer": 7,
+          "baseOverride": null
+        }
+      },
+      "medicalExtra": 0,
+      "maternityMerged": true
+    },
+    "assumptions": [
+      "社保缴费基数上下限 4354–21772 元/月，来源为安徽省人社厅等五部门通知（皖人社秘〔2026〕113号），自2026年1月1日起执行。",
+      "养老保险单位16%、个人8%；医疗保险单位约8%、个人2%；失业保险单位0.5%、个人0.5%。",
+      "生育保险已并入医疗保险。",
+      "工伤保险按行业基准费率浮动，默认按0.4%估算。",
+      "住房公积金单位与个人缴存比例均为 5%–12% 区间自选，默认按 7% 估算，基数 2320–31564 元/月。"
+    ]
+  },
+  {
+    "id": "zhengzhou-2026-social-housing",
+    "cityId": "zhengzhou",
+    "label": "郑州市 2026 年度（2026年7月起·省统一）",
+    "validFrom": "2026-07-01",
+    "validThrough": "2026-12-31",
+    "verifiedOn": "2026-11-07",
+    "sources": [
+      {
+        "title": "关于公布2026年度社会保险缴费基数上下限标准的通知（豫人社办〔2026〕62号）",
+        "url": "https://hrss.henan.gov.cn/2026/10-10/3435886.html",
+        "publishedOn": "2026-09-30",
+        "retrievedAt": "2026-11-07T11:00:00.000Z",
+        "sha256": "e346328db66bd86dee84af0a6b3d3015dc0ce7ffb461614ef1445303d689448e",
+        "evidence": "自2026年7月1日起，全省社会保险（含基本养老保险、基本医疗保险、工伤保险、失业保险、生育保险）缴费基数以6520元/月确定个人缴费基数上下限，缴费基数下限为3912元，缴费基数上限为19560元。"
+      },
+      {
+        "title": "《郑州住房公积金管理中心关于调整2026年度住房公积金缴存基数的通知》政策解读",
+        "url": "https://zzgjj.zhengzhou.gov.cn/zxindt/10200410.jhtml",
+        "publishedOn": "2026-08-11",
+        "retrievedAt": "2026-11-07T11:00:00.000Z",
+        "sha256": "a9172658979d28c11367aa925ac8bac14c762b9214987f3c4e7a60d3f39a5ad3",
+        "evidence": "2026年度住房公积金缴存基数上限为28849元，下限为2350元。缴存比例由单位在5%—12%的区间内自主选择。"
+      }
+    ],
+    "parameters": {
+      "socialBase": {
+        "mode": "salary",
+        "value": 0,
+        "minimum": 3912,
+        "maximum": 19560
+      },
+      "housingBase": {
+        "mode": "salary",
+        "value": 0,
+        "minimum": 2350,
+        "maximum": 28849
+      },
+      "rates": {
+        "pension": {
+          "employee": 8,
+          "employer": 16,
+          "baseOverride": null
+        },
+        "medical": {
+          "employee": 2,
+          "employer": 7,
+          "baseOverride": null
+        },
+        "unemployment": {
+          "employee": 0.3,
+          "employer": 0.7,
+          "baseOverride": null
+        },
+        "injury": {
+          "employee": 0,
+          "employer": 0.4,
+          "baseOverride": null
+        },
+        "maternity": {
+          "employee": 0,
+          "employer": 0,
+          "baseOverride": null
+        },
+        "housing": {
+          "employee": 7,
+          "employer": 7,
+          "baseOverride": null
+        }
+      },
+      "medicalExtra": 0,
+      "maternityMerged": true
+    },
+    "assumptions": [
+      "社保缴费基数（五险统一）上下限 3912–19560 元/月，来源为河南省人社厅等四部门通知（豫人社办〔2026〕62号），自2026年7月1日起执行。",
+      "养老保险单位16%、个人8%；医疗保险单位7%（阶段性降费口径）、个人2%；失业保险单位0.7%、个人0.3%。",
+      "生育保险单位1%（并入医疗统一征缴口径），个人不缴。",
+      "工伤保险按行业基准费率 0.2%–1.9% 浮动，默认按0.4%估算。",
+      "住房公积金单位与个人缴存比例均为 5%–12% 区间自选，默认按 7% 估算，基数 2350–28849 元/月。"
     ]
   }
 ]

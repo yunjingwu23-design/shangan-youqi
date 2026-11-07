@@ -45,6 +45,104 @@ export const cityDirectory = [
       'www.gz.gov.cn',
     ],
   },
+  {
+    id: 'hangzhou',
+    name: '杭州',
+    hosts: [
+      'rlsbt.zj.gov.cn',
+      'gjj.hangzhou.gov.cn',
+      'www.hangzhou.gov.cn',
+      'www.zj.gov.cn',
+    ],
+  },
+  {
+    id: 'chengdu',
+    name: '成都',
+    hosts: [
+      'rst.sc.gov.cn',
+      'cdyb.chengdu.gov.cn',
+      'cdzfgjj.chengdu.gov.cn',
+      'www.chengdu.gov.cn',
+    ],
+  },
+  {
+    id: 'wuhan',
+    name: '武汉',
+    hosts: [
+      'rst.hubei.gov.cn',
+      'gjj.wuhan.gov.cn',
+      'www.hongshan.gov.cn',
+    ],
+  },
+  {
+    id: 'nanjing',
+    name: '南京',
+    hosts: [
+      'jshrss.jiangsu.gov.cn',
+      'gjj.nanjing.gov.cn',
+      'www.nanjing.gov.cn',
+      'www.jiangsu.gov.cn',
+    ],
+  },
+  {
+    id: 'suzhou',
+    name: '苏州',
+    hosts: [
+      'jshrss.jiangsu.gov.cn',
+      'hrss.suzhou.gov.cn',
+      'www.suzhou.gov.cn',
+      'www.sipspf.org.cn',
+    ],
+  },
+  {
+    id: 'xian',
+    name: '西安',
+    hosts: [
+      'rst.shaanxi.gov.cn',
+      'zfgjj.xa.gov.cn',
+      'xahrss.xa.gov.cn',
+      'shaanxi.chinatax.gov.cn',
+      'xa.chinatax.gov.cn',
+    ],
+  },
+  {
+    id: 'changsha',
+    name: '长沙',
+    hosts: [
+      'rst.hunan.gov.cn',
+      'ybj.hunan.gov.cn',
+      'gjjzx.changsha.gov.cn',
+      'www.changsha.gov.cn',
+      'www.csx.gov.cn',
+    ],
+  },
+  {
+    id: 'chongqing',
+    name: '重庆',
+    hosts: [
+      'rlsbj.cq.gov.cn',
+      'www.cqgjj.cn',
+    ],
+  },
+  {
+    id: 'hefei',
+    name: '合肥',
+    hosts: [
+      'hrss.ah.gov.cn',
+      'ybj.hefei.gov.cn',
+      'gjjzx.hefei.gov.cn',
+      'www.hefei.gov.cn',
+    ],
+  },
+  {
+    id: 'zhengzhou',
+    name: '郑州',
+    hosts: [
+      'hrss.henan.gov.cn',
+      'zzgjj.zhengzhou.gov.cn',
+      'www.henan.gov.cn',
+    ],
+  },
 ] as const;
 export type CityId = (typeof cityDirectory)[number]['id'];
 const isoDate = z.iso.date();
@@ -88,7 +186,22 @@ const parametersSchema = z
 export const cityPolicySchema = z
   .object({
     id: z.string().regex(/^[a-z0-9-]{1,100}$/),
-    cityId: z.enum(['shanghai', 'beijing', 'shenzhen', 'guangzhou']),
+    cityId: z.enum([
+      'shanghai',
+      'beijing',
+      'shenzhen',
+      'guangzhou',
+      'hangzhou',
+      'chengdu',
+      'wuhan',
+      'nanjing',
+      'suzhou',
+      'xian',
+      'changsha',
+      'chongqing',
+      'hefei',
+      'zhengzhou',
+    ]),
     label: z.string().trim().min(2).max(120),
     validFrom: isoDate,
     validThrough: isoDate,
