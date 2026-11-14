@@ -45,6 +45,8 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
+          # 把本步骤全部输出也存一份，失败时一并回传，方便在本地直接读原因
+          exec > >(tee /tmp/secret-check.log) 2>&1
           bad=0
           for n in NEXT_PUBLIC_SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY DEEPSEEK_API_KEY; do
             v="${!n}"
@@ -52,7 +54,7 @@ jobs:
               echo "::error::缺少 $n —— 请到 Settings → Secrets and variables → Actions → Repository secrets 里添加（注意选 Repository secrets，不是 Environment secrets）"
               bad=1
             else
-              echo "✓ $n 已就位（长度 ${#v}）"
+              echo "✓ $n 已就位（长度 ${#v}，开头 [${v:0:8}]，结尾 [...${v: -4}]）"
             fi
           done
           if [ "$bad" = "1" ]; then
@@ -60,10 +62,10 @@ jobs:
             exit 1
           fi
 
-          # 格式校验：值里带了引号、空格或换行，createClient 会直接抛错
+          # 格式校验：值里带了引号、空格、换行或「KEY=」前缀，createClient 会直接抛错
           url="$NEXT_PUBLIC_SUPABASE_URL"
           if ! printf '%s' "$url" | grep -Eq '^https://[a-z0-9]+\.supabase\.co$'; then
-            echo "::error::NEXT_PUBLIC_SUPABASE_URL 格式不对，长度 ${#url}（正常应为 40），开头是 [${url:0:8}]。正确形如 https://abcdefghijklmnop.supabase.co，不要带引号、空格或换行"
+            echo "::error::NEXT_PUBLIC_SUPABASE_URL 格式不对，长度 ${#url}（正常应为 40），开头是 [${url:0:12}]。正确形如 https://lxecahdyvrdfezgtmbfp.supabase.co，不要带引号、空格、换行，也不要带 NEXT_PUBLIC_SUPABASE_URL= 前缀"
             exit 1
           fi
           echo "✓ 数据库地址格式正确（${#url} 字符）"
@@ -71,7 +73,7 @@ jobs:
           key="$SUPABASE_SERVICE_ROLE_KEY"
           case "$key" in
             sb_secret_*|eyJ*) echo "✓ 数据库密钥格式正确（${#key} 字符）" ;;
-            *) echo "::error::SUPABASE_SERVICE_ROLE_KEY 不像有效密钥，长度 ${#key}，开头是 [${key:0:10}]。应以 sb_secret_ 或 eyJ 开头，不要带引号或空格"; exit 1 ;;
+            *) echo "::error::SUPABASE_SERVICE_ROLE_KEY 不像有效密钥，长度 ${#key}，开头是 [${key:0:12}]。应以 sb_secret_ 或 eyJ 开头，不要带引号或空格"; exit 1 ;;
           esac
 
       - name: 环境诊断
@@ -148,6 +150,8 @@ jobs:
             echo "time: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
             echo "--- 采集脚本输出 ---"
             cat /tmp/radar.out 2>/dev/null || echo "(没有产生 /tmp/radar.out)"
+            echo "--- 密钥自检输出 ---"
+            cat /tmp/secret-check.log 2>/dev/null || echo "(没有产生 /tmp/secret-check.log)"
             echo "--- 应用运行日志 ---"
             cat logs/radar-collect.log 2>/dev/null || echo "(没有产生 logs/radar-collect.log)"
           } > ci-logs/last-failure.log
