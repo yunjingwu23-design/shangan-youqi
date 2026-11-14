@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   collect:
@@ -45,20 +45,45 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
-          missing=0
+          bad=0
           for n in NEXT_PUBLIC_SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY DEEPSEEK_API_KEY; do
             v="${!n}"
             if [ -z "$v" ]; then
               echo "::error::缺少 $n —— 请到 Settings → Secrets and variables → Actions → Repository secrets 里添加（注意选 Repository secrets，不是 Environment secrets）"
-              missing=1
+              bad=1
             else
               echo "✓ $n 已就位（长度 ${#v}）"
             fi
           done
-          if [ "$missing" = "1" ]; then
+          if [ "$bad" = "1" ]; then
             echo "密钥不全，本次不执行采集。"
             exit 1
           fi
+
+          # 格式校验：值里带了引号、空格或换行，createClient 会直接抛错
+          url="$NEXT_PUBLIC_SUPABASE_URL"
+          if ! printf '%s' "$url" | grep -Eq '^https://[a-z0-9]+\.supabase\.co$'; then
+            echo "::error::NEXT_PUBLIC_SUPABASE_URL 格式不对，长度 ${#url}（正常应为 40），开头是 [${url:0:8}]。正确形如 https://abcdefghijklmnop.supabase.co，不要带引号、空格或换行"
+            exit 1
+          fi
+          echo "✓ 数据库地址格式正确（${#url} 字符）"
+
+          key="$SUPABASE_SERVICE_ROLE_KEY"
+          case "$key" in
+            sb_secret_*|eyJ*) echo "✓ 数据库密钥格式正确（${#key} 字符）" ;;
+            *) echo "::error::SUPABASE_SERVICE_ROLE_KEY 不像有效密钥，长度 ${#key}，开头是 [${key:0:10}]。应以 sb_secret_ 或 eyJ 开头，不要带引号或空格"; exit 1 ;;
+          esac
+
+      - name: 环境诊断
+        run: |
+          echo "node: $(node -v)"
+          echo "npm:  $(npm -v)"
+          if [ -d node_modules/@supabase/supabase-js ]; then
+            echo "✓ @supabase/supabase-js 已安装"
+          else
+            echo "::error::node_modules 里没有 @supabase/supabase-js，依赖没装全"
+          fi
+          node -e "import('@supabase/supabase-js').then(()=>console.log('✓ 模块可正常加载')).catch(e=>{console.error('::error::模块加载失败:', e.message); process.exit(1)})"
 
       - name: 运行采集脚本
         env:
@@ -110,3 +135,25 @@ jobs:
           path: logs/radar-collect.log
           if-no-files-found: ignore
           retention-days: 14
+
+      # 失败时把完整输出推到 ci-logs 分支，方便在本地直接读取排查
+      - name: 失败时把日志推回仓库
+        if: failure()
+        run: |
+          mkdir -p ci-logs
+          {
+            echo "run_number: ${{ github.run_number }}"
+            echo "run_id: ${{ github.run_id }}"
+            echo "sha: ${{ github.sha }}"
+            echo "time: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+            echo "--- 采集脚本输出 ---"
+            cat /tmp/radar.out 2>/dev/null || echo "(没有产生 /tmp/radar.out)"
+            echo "--- 应用运行日志 ---"
+            cat logs/radar-collect.log 2>/dev/null || echo "(没有产生 logs/radar-collect.log)"
+          } > ci-logs/last-failure.log
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B ci-logs
+          git add -f ci-logs/last-failure.log
+          git commit -m "ci: run ${{ github.run_number }} 失败日志" || echo "无变化"
+          git push -f origin ci-logs
