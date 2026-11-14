@@ -39,6 +39,27 @@ jobs:
       - name: 安装依赖
         run: npm ci --no-audit --no-fund
 
+      - name: 检查密钥是否就位
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          missing=0
+          for n in NEXT_PUBLIC_SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY DEEPSEEK_API_KEY; do
+            v="${!n}"
+            if [ -z "$v" ]; then
+              echo "::error::缺少 $n —— 请到 Settings → Secrets and variables → Actions → Repository secrets 里添加（注意选 Repository secrets，不是 Environment secrets）"
+              missing=1
+            else
+              echo "✓ $n 已就位（长度 ${#v}）"
+            fi
+          done
+          if [ "$missing" = "1" ]; then
+            echo "密钥不全，本次不执行采集。"
+            exit 1
+          fi
+
       - name: 运行采集脚本
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
@@ -57,16 +78,28 @@ jobs:
             echo '## 本次采集结果'
             echo ''
             echo '```'
-            grep -E '^(发现|✓|汇总|  牛客网|  掘金|  CSDN|  V2EX|  思否)' /tmp/radar.out | tail -40 || true
+            if [ -f /tmp/radar.out ]; then
+              grep -E '^(发现|✓|汇总|  牛客网|  掘金|  CSDN|  V2EX|  思否)' /tmp/radar.out | tail -40 || true
+            else
+              echo '脚本未产生输出（多半是前置检查未通过）'
+            fi
             echo '```'
             echo ''
-            echo '<details><summary>结构化报告</summary>'
-            echo ''
-            echo '```json'
-            grep '^REPORT_JSON ' /tmp/radar.out | sed 's/^REPORT_JSON //' || echo '{}'
-            echo '```'
-            echo ''
-            echo '</details>'
+            if grep -q '^REPORT_JSON ' /tmp/radar.out 2>/dev/null; then
+              echo '<details><summary>结构化报告</summary>'
+              echo ''
+              echo '```json'
+              grep '^REPORT_JSON ' /tmp/radar.out | sed 's/^REPORT_JSON //'
+              echo '```'
+              echo ''
+              echo '</details>'
+            else
+              echo '### 脚本最后 30 行输出'
+              echo ''
+              echo '```'
+              tail -30 /tmp/radar.out 2>/dev/null || echo '（无输出文件）'
+              echo '```'
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: 上传运行日志
