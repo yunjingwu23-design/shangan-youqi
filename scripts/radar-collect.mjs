@@ -39,7 +39,8 @@ function loadEnv() {
       if (m) env[m[1]] = m[2].replace(/^["']|["']$/g, '').trim();
     }
   } catch {}
-  return { ...process.env, ...env };
+  // 显式注入的环境变量优先（云端沙箱 / CI 没有 .env.local，靠 process.env 传入）
+  return { ...env, ...process.env };
 }
 const env = loadEnv();
 const SUPA_URL = env.NEXT_PUBLIC_SUPABASE_URL;

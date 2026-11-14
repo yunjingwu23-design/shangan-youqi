@@ -1,0 +1,79 @@
+name: 面经雷达 · 每日采集
+
+# 说明：GitHub Actions 的 cron 一律按 UTC 计算，北京时间 = UTC+8。
+#   北京 08:30 → UTC 00:30
+#   北京 20:30 → UTC 12:30
+# 两个时点各跑一次，脚本自带 URL / 指纹 / 同名标题三重去重，重复跑不会重复入库。
+
+on:
+  schedule:
+    - cron: '30 0 * * *'
+    - cron: '30 12 * * *'
+  # 支持在 Actions 页面手动点「Run workflow」试跑
+  workflow_dispatch: {}
+
+# 同一时刻只允许一个采集进程，后到的排队而不是取消前一个
+concurrency:
+  group: radar-collect
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  collect:
+    name: 采集面经并写入 Supabase
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 准备 Node 环境
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci --no-audit --no-fund
+
+      - name: 运行采集脚本
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DEEPSEEK_MODEL: ${{ secrets.DEEPSEEK_MODEL }}
+          AI_PROVIDER: deepseek
+        run: |
+          set -o pipefail
+          node scripts/radar-collect.mjs --limit 12 2>&1 | tee /tmp/radar.out
+
+      - name: 把结果写进运行摘要
+        if: always()
+        run: |
+          {
+            echo '## 本次采集结果'
+            echo ''
+            echo '```'
+            grep -E '^(发现|✓|汇总|  牛客网|  掘金|  CSDN|  V2EX|  思否)' /tmp/radar.out | tail -40 || true
+            echo '```'
+            echo ''
+            echo '<details><summary>结构化报告</summary>'
+            echo ''
+            echo '```json'
+            grep '^REPORT_JSON ' /tmp/radar.out | sed 's/^REPORT_JSON //' || echo '{}'
+            echo '```'
+            echo ''
+            echo '</details>'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 上传运行日志
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: radar-log-${{ github.run_number }}
+          path: logs/radar-collect.log
+          if-no-files-found: ignore
+          retention-days: 14
