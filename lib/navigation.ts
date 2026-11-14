@@ -31,6 +31,8 @@ export const moduleLinks: Record<ModuleKey, { href: string; label: string }[]> =
   resources: [
     { href: '/resources', label: '免费面经' },
     { href: '/resources/radar', label: '全网面经雷达' },
+    { href: '/resources/radar/questions', label: '面试问题库' },
+    { href: '/resources/radar/submit', label: '提交面经' },
     { href: '/resources/store', label: '原创及授权商城' },
     { href: '/resources/mine', label: '我的资料' },
   ],

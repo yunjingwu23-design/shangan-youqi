@@ -6,7 +6,16 @@ import { useDraftStorage } from '@/components/drafts';
 import { OriginalResumeEditor, ResumeUpload, downloadBytes } from '@/components/resume-original';
 import type { OriginalResume } from '@/lib/resume-files/model';
 import { templateWord } from '@/lib/resume-files/template-word';
-import { emptyResume, type ResumeDocument } from '@/lib/resume';
+import {
+  emptyResume,
+  resumeFromPreset,
+  resumePresetGroups,
+  resumeTemplateOptions,
+  resumeTemplatePresets,
+  type ResumeDocument,
+  type ResumePresetGroupKey,
+  type ResumeTemplatePreset,
+} from '@/lib/resume';
 type Summary = { id: string; title: string; company: string; updated_at: string };
 export function ResumeStudio({ email }: { email: string }) {
   const router = useRouter(),
@@ -25,6 +34,11 @@ export function ResumeStudio({ email }: { email: string }) {
     [notice, setNotice] = useState(''),
     [busy, setBusy] = useState(false),
     [dirty, setDirty] = useState(false);
+  const [presetFilter, setPresetFilter] = useState<ResumePresetGroupKey | 'all'>('all');
+  const visiblePresets =
+    presetFilter === 'all'
+      ? resumeTemplatePresets
+      : resumeTemplatePresets.filter((preset) => preset.group === presetFilter);
   const temporary = useDraftStorage<{
     document: ResumeDocument;
     title: string;
@@ -140,6 +154,19 @@ export function ResumeStudio({ email }: { email: string }) {
     setDocument(next);
     setDirty(true);
     setNotice('');
+  }
+  async function applyPreset(preset: ResumeTemplatePreset) {
+    if (dirty && !window.confirm('套用官方模板会放弃未保存的修改，是否继续？')) return;
+    temporary.clear();
+    window.history.replaceState(null, '', '/resume');
+    setId(undefined);
+    setUpdatedAt(undefined);
+    setTitle(preset.title);
+    setCompany('');
+    setDocument(resumeFromPreset(preset, { name: document.basics.name, email: email }));
+    setDirty(true);
+    setError('');
+    setNotice(`已套用「${preset.label}」，把占位文字替换成你的真实经历后保存。`);
   }
   async function save(asNew = false) {
     setBusy(true);
@@ -333,17 +360,11 @@ export function ResumeStudio({ email }: { email: string }) {
       <ResumeUpload onUploaded={selectVersion} />
       <section className="resume-template-picker" aria-label="选择简历模板">
         <div>
-          <h2>选择站内模板</h2>
-          <p>新建简历可选版式；上传原件后可在原版编辑器中保留原模板。</p>
+          <h2>选择站内版式</h2>
+          <p>只换排版、不改内容。下方模板库里的每一套模板，都已对应到这 6 种版式之一。</p>
         </div>
         <div role="group" aria-label="简历模板">
-          {(
-            [
-              { key: 'classic', label: '经典单栏', description: '清晰分区，适合通用求职' },
-              { key: 'compact', label: '紧凑履历', description: '更紧凑的字体与段落间距' },
-              { key: 'sidebar', label: '侧栏信息', description: '个人信息侧栏与经历正文' },
-            ] as const
-          ).map((item) => (
+          {resumeTemplateOptions.map((item) => (
             <button
               key={item.key}
               type="button"
@@ -351,9 +372,93 @@ export function ResumeStudio({ email }: { email: string }) {
               onClick={() => change({ ...document, template: item.key })}
             >
               <span className={`resume-template-mini ${item.key}`} aria-hidden="true" />
-              <strong>{item.label}</strong>
+              <strong>
+                {item.label}
+                {item.official && <span className="resume-template-badge">官方</span>}
+              </strong>
               <small>{item.description}</small>
             </button>
+          ))}
+        </div>
+      </section>
+      <section className="resume-official" aria-label="Word 模板库">
+        <div className="resume-official-head">
+          <h2>Word 模板库</h2>
+          <p>
+            我们自己的 {resumeTemplatePresets.length} 套简历模板，缩略图就是 Word
+            原件的真实首页。可以直接下载填写，也可以「用此模板新建」——套用版式与章节骨架后在站内编辑，
+            不会覆盖已保存的版本。
+          </p>
+        </div>
+        <div className="resume-preset-filter" role="group" aria-label="按版式筛选模板">
+          <button
+            type="button"
+            aria-pressed={presetFilter === 'all'}
+            onClick={() => setPresetFilter('all')}
+          >
+            全部<span>{resumeTemplatePresets.length}</span>
+          </button>
+          {resumePresetGroups.map((group) => (
+            <button
+              key={group.key}
+              type="button"
+              title={group.hint}
+              aria-pressed={presetFilter === group.key}
+              onClick={() => setPresetFilter(group.key)}
+            >
+              {group.label}
+              <span>
+                {resumeTemplatePresets.filter((preset) => preset.group === group.key).length}
+              </span>
+            </button>
+          ))}
+        </div>
+        <div className="resume-official-grid">
+          {visiblePresets.map((preset) => (
+            <article key={preset.id} className="resume-template-card">
+              <a
+                className="resume-template-shot"
+                href={preset.file.href}
+                download={preset.file.name}
+                title={`${preset.file.name} · ${preset.file.note}`}
+              >
+                <img
+                  src={preset.thumb}
+                  alt={`${preset.label}模板首页预览`}
+                  width={460}
+                  height={651}
+                  loading="lazy"
+                  decoding="async"
+                />
+                <span className="resume-template-shot-hint">下载 Word 原件</span>
+              </a>
+              <div className="resume-template-body">
+                <div className="resume-template-title">
+                  <h3>{preset.label}</h3>
+                  <span
+                    className="resume-template-dot"
+                    style={{ background: preset.accent }}
+                    aria-hidden="true"
+                  />
+                </div>
+                <p className="resume-template-roles">{preset.roles}</p>
+                <p className="resume-template-desc">{preset.description}</p>
+                <div className="resume-template-actions">
+                  <button
+                    className="button primary"
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void applyPreset(preset)}
+                  >
+                    <FileText size={15} />
+                    用此模板新建
+                  </button>
+                  <a className="site-text-link" href={preset.file.href} download={preset.file.name}>
+                    下载
+                  </a>
+                </div>
+              </div>
+            </article>
           ))}
         </div>
       </section>

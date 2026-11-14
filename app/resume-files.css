@@ -515,3 +515,376 @@
     display: none;
   }
 }
+
+/* ---- 官方模板：版式徽标与缩略图 ---- */
+.resume-template-badge {
+  display: inline-block;
+  margin-left: 7px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #eef2e2;
+  color: #5c7040;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  vertical-align: 1px;
+}
+.resume-template-mini.consulting {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 4px,
+    #9aa38c 5px 6px,
+    transparent 7px 11px
+  );
+  background-size: 26px 34px;
+  background-position: 6px 10px;
+  box-shadow: inset 0 3px 0 #4a5340;
+}
+.resume-template-mini.bilingual {
+  background-image:
+    linear-gradient(to right, #1d4ed8 0 3px, transparent 3px 100%),
+    repeating-linear-gradient(to bottom, transparent 0 5px, #b9c2d4 6px 7px, transparent 8px 11px);
+  background-size:
+    100% 100%,
+    24px 32px;
+  background-position:
+    0,
+    9px 8px;
+}
+.resume-template-mini.classic-en {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 3px,
+    #a8a8a8 4px 5px,
+    transparent 6px 10px
+  );
+  background-size: 22px 36px;
+  background-position: 8px 9px;
+  box-shadow: inset 0 2px 0 #2b2b2b;
+}
+
+/* ---- 咨询服务单栏版式（豌豆派模板） ---- */
+.resume-preview.theme-consulting {
+  padding: 34px 38px;
+  font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+.resume-preview.theme-consulting > header {
+  text-align: left;
+  border-bottom: 2px solid #1f2d3d;
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+}
+.resume-preview.theme-consulting h2 {
+  font-family: 'Songti SC', 'SimSun', serif;
+  font-size: 24px;
+  letter-spacing: 3px;
+  margin-bottom: 6px;
+}
+.resume-preview.theme-consulting .resume-headline {
+  font-size: 12px;
+  color: #3f4a5a;
+  margin: 4px 0;
+}
+.resume-preview.theme-consulting .resume-contact {
+  font-size: 10.5px;
+  color: #4a5568;
+  margin: 3px 0;
+}
+.resume-preview.theme-consulting section {
+  margin: 16px 0;
+}
+.resume-preview.theme-consulting section h3 {
+  font-family: 'Songti SC', 'SimSun', serif;
+  font-size: 13px;
+  letter-spacing: 1.5px;
+  color: #1f2d3d;
+  border-bottom: 1px solid #1f2d3d;
+  padding-bottom: 4px;
+  margin-bottom: 9px;
+}
+.resume-preview.theme-consulting section p {
+  font-size: 11px;
+  line-height: 1.78;
+}
+
+/* ---- 双语经历版式（时间 / 职位 / 公司 三段式） ---- */
+.resume-preview.theme-bilingual {
+  padding: 30px 34px;
+}
+.resume-preview.theme-bilingual > header {
+  text-align: left;
+  border-bottom: 3px solid #1d4ed8;
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+}
+.resume-preview.theme-bilingual h2 {
+  color: #16357f;
+  font-size: 24px;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+.resume-preview.theme-bilingual .resume-headline {
+  color: #1d4ed8;
+  font-size: 12px;
+}
+.resume-preview.theme-bilingual .resume-contact {
+  color: #4b5563;
+  font-size: 10.5px;
+  margin: 4px 0;
+}
+.resume-preview.theme-bilingual section {
+  margin: 15px 0;
+}
+.resume-preview.theme-bilingual section h3 {
+  border-bottom: 0;
+  border-left: 4px solid #1d4ed8;
+  background: #eef2ff;
+  color: #1d3f9e;
+  font-size: 12.5px;
+  letter-spacing: 1px;
+  padding: 5px 10px;
+  margin-bottom: 10px;
+}
+.resume-preview.theme-bilingual section p {
+  font-size: 11px;
+  line-height: 1.82;
+}
+
+/* ---- 英文范例版式（Education 前置、日期右对齐视觉） ---- */
+.resume-preview.theme-classic-en {
+  padding: 32px 36px;
+  font-family: Georgia, 'Times New Roman', 'Songti SC', serif;
+}
+.resume-preview.theme-classic-en > header {
+  text-align: center;
+  border-bottom: 1px solid #1a1a1a;
+  padding-bottom: 12px;
+  margin-bottom: 18px;
+}
+.resume-preview.theme-classic-en h2 {
+  text-transform: uppercase;
+  letter-spacing: 2.5px;
+  font-size: 22px;
+  margin-bottom: 6px;
+}
+.resume-preview.theme-classic-en .resume-headline {
+  font-size: 11.5px;
+  color: #333;
+}
+.resume-preview.theme-classic-en .resume-contact {
+  font-size: 10px;
+  color: #444;
+  margin: 4px 0;
+}
+.resume-preview.theme-classic-en section {
+  margin: 15px 0;
+}
+.resume-preview.theme-classic-en section h3 {
+  text-transform: uppercase;
+  letter-spacing: 1.6px;
+  font-size: 11.5px;
+  color: #1a1a1a;
+  border-bottom: 1px solid #1a1a1a;
+  padding-bottom: 3px;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+.resume-preview.theme-classic-en section p {
+  font-size: 10.5px;
+  line-height: 1.72;
+}
+/* ---- Word 模板库 ---- */
+.resume-official {
+  margin: 30px 0 34px;
+}
+.resume-official-head h2 {
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+.resume-official-head p {
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--muted);
+  max-width: 74ch;
+}
+.resume-preset-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 15px 0 2px;
+}
+.resume-preset-filter button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid #dde5d3;
+  border-radius: 999px;
+  background: #fff;
+  color: #5d6b4c;
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.resume-preset-filter button:hover {
+  border-color: #c3d0ae;
+  background: #f7f9f1;
+}
+.resume-preset-filter button[aria-pressed='true'] {
+  border-color: #5c7040;
+  background: #5c7040;
+  color: #fff;
+}
+.resume-preset-filter button span {
+  font-size: 10px;
+  opacity: 0.72;
+}
+.resume-official-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+.resume-template-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #e2e8d8;
+  border-radius: 12px;
+  background: #fff;
+  transition:
+    box-shadow 0.18s,
+    transform 0.18s;
+}
+.resume-template-card:hover {
+  box-shadow: 0 8px 22px rgba(92, 112, 64, 0.13);
+  transform: translateY(-2px);
+}
+.resume-template-shot {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 460 / 640;
+  background: #f3f5ee;
+  border-bottom: 1px solid #eef1e6;
+}
+.resume-template-shot img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+.resume-template-shot-hint {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 7px 0;
+  background: rgba(92, 112, 64, 0.9);
+  color: #fff;
+  font-size: 10.5px;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(100%);
+  transition:
+    opacity 0.18s,
+    transform 0.18s;
+}
+.resume-template-card:hover .resume-template-shot-hint,
+.resume-template-shot:focus-visible .resume-template-shot-hint {
+  opacity: 1;
+  transform: none;
+}
+.resume-template-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  padding: 13px 14px 14px;
+}
+.resume-template-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.resume-template-title h3 {
+  margin: 0;
+  font-size: 13.5px;
+}
+.resume-template-dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 0 3px #eef1e6;
+}
+.resume-template-roles {
+  margin: 0;
+  font-size: 10.5px;
+  color: #8b9779;
+}
+.resume-template-desc {
+  flex: 1;
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.7;
+  color: #6d7663;
+}
+.resume-template-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 3px;
+}
+.resume-template-actions .button {
+  padding: 7px 11px;
+  font-size: 11.5px;
+}
+.resume-template-actions .site-text-link {
+  font-size: 11px;
+}
+@media (max-width: 1080px) {
+  .resume-official-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .resume-official-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .resume-template-body {
+    padding: 11px 11px 12px;
+  }
+  .resume-template-desc {
+    font-size: 10.5px;
+  }
+  .resume-preview.theme-consulting,
+  .resume-preview.theme-bilingual,
+  .resume-preview.theme-classic-en {
+    padding: 24px 22px;
+  }
+}
+@media (max-width: 520px) {
+  .resume-official-grid {
+    grid-template-columns: 1fr;
+  }
+  .resume-template-shot {
+    aspect-ratio: 460 / 560;
+  }
+}
+@media print {
+  .resume-official {
+    display: none !important;
+  }
+  .resume-preview.theme-consulting,
+  .resume-preview.theme-bilingual,
+  .resume-preview.theme-classic-en {
+    padding: 0;
+  }
+}

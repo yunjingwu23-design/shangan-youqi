@@ -11,3 +11,11 @@ test-results/
 .local/
 
 .vercel/
+
+# 采集脚本运行日志（本地）
+logs/
+
+# 排查用临时文件与编辑器项目数据
+.tmp-probe/
+.workbuddy/
+nc_*.html

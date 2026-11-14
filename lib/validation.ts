@@ -55,6 +55,45 @@ export const entryPatchSchema = entrySchema
   .partial()
   .extend({ id: z.string().uuid() })
   .strict();
+export const scheduleKindSchema = z.enum([
+  'deadline',
+  'online_test',
+  'interview',
+  'review',
+  'follow_up',
+  'other',
+]);
+const scheduleFields = {
+  title: z.string().trim().min(1, '请填写日程标题').max(120, '标题不超过 120 字'),
+  kind: scheduleKindSchema,
+  company: z.string().trim().max(100, '公司名称不超过 100 字'),
+  role: z.string().trim().max(100, '岗位名称不超过 100 字'),
+  job_entry_id: z.string().uuid('关联岗位无效').nullable(),
+  starts_at: z
+    .string()
+    .max(40)
+    .refine((value) => !Number.isNaN(Date.parse(value)), '请选择有效的日期与时间'),
+  duration_minutes: z.number().int().min(5).max(1440).nullable(),
+  remind_days: z.number().int().min(0).max(30),
+  note: z.string().max(2000, '备注不超过 2000 字'),
+  state: z.enum(['open', 'done']),
+};
+export const scheduleEventSchema = z
+  .object({
+    ...scheduleFields,
+    kind: scheduleFields.kind.default('deadline'),
+    company: scheduleFields.company.default(''),
+    role: scheduleFields.role.default(''),
+    job_entry_id: scheduleFields.job_entry_id.default(null),
+    duration_minutes: scheduleFields.duration_minutes.default(null),
+    remind_days: scheduleFields.remind_days.default(1),
+    note: scheduleFields.note.default(''),
+    state: scheduleFields.state.default('open'),
+  })
+  .strict();
+// PATCH only writes what was submitted: keep every field optional without defaults.
+export const schedulePatchSchema = z.object(scheduleFields).partial().strict();
+export type ScheduleEventInput = z.infer<typeof scheduleEventSchema>;
 export type Profile = z.infer<typeof profileSchema> & { user_id: string; updated_at: string };
 export type Entry = z.infer<typeof entrySchema> & {
   id: string;

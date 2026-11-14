@@ -21,6 +21,7 @@ import {
   adminLinks,
 } from '@/lib/navigation';
 import { DraftProvider } from '@/components/drafts';
+import { FeedbackWidget } from '@/components/feedback-widget';
 const icons = [BriefcaseBusiness, LayoutDashboard, Headphones, BookOpen];
 export function SiteLinks({
   mobile = false,
@@ -108,9 +109,11 @@ function LocationNavigation() {
                     ? '导入 / 新建 JD'
                     : path.startsWith('/admin/jobs/')
                       ? 'JD 编辑与审核'
-                      : path === '/admin/review'
-                        ? '审核工作台'
-                        : path === '/admin/logs'
+                          : path === '/admin/review'
+                            ? '审核工作台'
+                            : path === '/admin/feedback'
+                              ? '用户反馈'
+                              : path === '/admin/logs'
                           ? '操作日志'
                           : path === '/admin/analytics'
                             ? '数据分析中心'
@@ -248,7 +251,10 @@ export function SiteChrome({
                 <p>让每一步，都离上岸更近。</p>
               </div>
               <p>招聘信息以原始来源为准 · 个人数据仅自己可见</p>
-              <Link href="/">回到首页 ↑</Link>
+              <nav className="ia-footer-links">
+                <FeedbackWidget />
+                <Link href="/">回到首页 ↑</Link>
+              </nav>
             </footer>
             <SiteLinks mobile />
           </>

@@ -4,6 +4,7 @@ import './(site)/site.css';
 import './ia.css';
 import './resume-files.css';
 import './admin.css';
+import './schedule.css';
 import { SiteChrome } from '@/components/site-navigation';
 import { siteSession } from '@/lib/site-session';
 import { Suspense } from 'react';

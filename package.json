@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --hostname 0.0.0.0",
     "build": "next build",
-    "start": "next start --hostname 0.0.0.0",
+    "start": "next build && next start --hostname 0.0.0.0",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/unit.test.ts",
     "test:integration": "node --import tsx --test --test-concurrency=1 tests/integration.test.ts",
@@ -30,7 +30,8 @@
     "test:resume-layout": "node --import tsx --test tests/resume-layout.test.ts",
     "test:salary": "node --import tsx --test --test-concurrency=1 tests/salary-unit.test.ts tests/salary.test.ts",
     "test:calculator": "node --import tsx --test tests/payroll-calculator.test.ts",
-    "test:city-policies": "node --import tsx --test tests/city-policies.test.ts"
+    "test:city-policies": "node --import tsx --test tests/city-policies.test.ts",
+    "test:interview-radar": "node --import tsx --test tests/interview-radar.test.ts"
   },
   "dependencies": {
     "@embedpdf/pdfium": "2.15.1",

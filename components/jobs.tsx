@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { ArrowUpRight, Search, Bookmark, Plus } from 'lucide-react';
-import { type CatalogJob, jobTypes, filterJobs } from '@/lib/catalog';
+import { type CatalogJob, jobTypes, filterJobs, allJobCategories, jobCategories } from '@/lib/catalog';
 export function JobsExplorer({
   jobs,
   preview,
@@ -21,7 +21,8 @@ export function JobsExplorer({
     mode = params.get('mode') || 'fuzzy',
     city = params.get('city') || '',
     industry = params.get('industry') || '',
-    cohort = params.get('cohort') || '';
+    cohort = params.get('cohort') || '',
+    category = params.get('category') || '';
   function setFilter(key: string, value: string) {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
@@ -33,10 +34,12 @@ export function JobsExplorer({
     setMode = (value: string) => setFilter('mode', value),
     setCity = (value: string) => setFilter('city', value),
     setIndustry = (value: string) => setFilter('industry', value),
-    setCohort = (value: string) => setFilter('cohort', value);
+    setCohort = (value: string) => setFilter('cohort', value),
+    setCategory = (value: string) => setFilter('category', value);
+  const categories = useMemo(() => allJobCategories(jobs), [jobs]);
   const found = useMemo(
-    () => filterJobs(jobs, { q, type, mode, city, industry, cohort }),
-    [jobs, q, type, mode, city, industry, cohort]
+    () => filterJobs(jobs, { q, type, mode, city, industry, cohort, category }),
+    [jobs, q, type, mode, city, industry, cohort, category]
   );
   return (
     <main className="site-main">
@@ -97,6 +100,19 @@ export function JobsExplorer({
               </select>
             </label>
           ))}
+          <label>
+            岗位类型
+            <select
+              aria-label="筛选岗位类型"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            >
+              <option value="">全部岗位类型</option>
+              {categories.map((v) => (
+                <option key={v}>{v}</option>
+              ))}
+            </select>
+          </label>
         </div>
       </section>
       <div className="site-section-title">
@@ -126,6 +142,13 @@ export function JobsExplorer({
             <p className="muted">
               {job.city} · {job.industry} · {job.cohort || '届别见详情'}
             </p>
+            <div className="job-category-tags">
+              {jobCategories(job).map((c) => (
+                <span className="job-category-tag" key={c}>
+                  {c}
+                </span>
+              ))}
+            </div>
             <small>
               {preview
                 ? '样品 · 来源与状态待核验'

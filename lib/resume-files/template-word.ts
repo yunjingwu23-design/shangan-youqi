@@ -8,7 +8,15 @@ const esc = (value: string) =>
 export function templateWord(document: ResumeDocument): Uint8Array {
   const compact = document.template === 'compact',
     size = compact ? 20 : 22,
-    accent = document.template === 'compact' ? '365064' : '657D45';
+    accents: Record<string, string> = {
+      classic: '657D45',
+      compact: '365064',
+      sidebar: '657D45',
+      consulting: '1F2D3D',
+      bilingual: '1D4ED8',
+      'classic-en': '1A1A1A',
+    },
+    accent = accents[document.template || 'classic'] || '657D45';
   const p = (
     text: string,
     options: { bold?: boolean; size?: number; color?: string; after?: number } = {}

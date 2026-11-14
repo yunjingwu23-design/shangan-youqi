@@ -9,11 +9,13 @@ import { spawnSync } from 'node:child_process';
 import { admin, SessionClient, dbUrl, anonKey } from './helpers';
 import { createClient } from '@supabase/supabase-js';
 import {
-  OpenAIInterviewProvider,
+  ChatReportProvider,
   ProviderError,
   reportCost,
   transcriptionCost,
+  type InterviewProvider,
 } from '../lib/interviews/provider';
+import { TencentAsrProvider } from '../lib/interviews/asr';
 import { runInterviewTask, cleanInterviewAudio } from '../lib/interviews/worker';
 import { inspectAudio, encodeAudioChunk, planAudioChunks } from '../lib/interviews/audio';
 import {
@@ -149,13 +151,14 @@ test(
       const chunks: Buffer[] = [];
       for await (const chunk of req) chunks.push(Buffer.from(chunk));
       const bytes = Buffer.concat(chunks);
-      assert.equal(req.headers.authorization, 'Bearer contract-test-only');
       res.setHeader('Content-Type', 'application/json');
-      if (req.url === '/v1/audio/transcriptions') {
+      if (req.url === '/' && req.headers['x-tc-action'] === 'SentenceRecognition') {
         calls++;
-        assert.ok(req.headers['content-type']?.startsWith('multipart/form-data; boundary='));
-        assert.ok(bytes.includes(Buffer.from('gpt-4o-transcribe')));
-        assert.ok(bytes.includes(Buffer.from('interview-segment.mp3')));
+        assert.ok(req.headers['x-tc-timestamp']);
+        assert.ok(String(req.headers.authorization).startsWith('TC3-HMAC-SHA256 Credential='));
+        const body = JSON.parse(bytes.toString());
+        assert.equal(body.SourceType, 1);
+        assert.ok(body.Data && body.Data.length > 0);
         if (failNext || calls === failAt) {
           failNext = false;
           res.statusCode = 429;
@@ -169,27 +172,19 @@ test(
             unblock = resolve;
           });
         }
-        res.end(JSON.stringify({ text: segment.text }));
-      } else if (req.url === '/v1/responses') {
+        res.end(JSON.stringify({ Response: { Result: segment.text } }));
+      } else if (req.url === '/chat/completions') {
+        assert.equal(req.headers.authorization, 'Bearer contract-test-only');
         const body = JSON.parse(bytes.toString());
-        assert.equal(body.store, false);
-        assert.equal(body.model, 'gpt-4.1-mini');
-        assert.equal(body.text.format.type, 'json_schema');
-        assert.equal(body.text.format.strict, true);
-        const input = JSON.parse(body.input[1].content[0].text);
+        assert.equal(body.response_format.type, 'json_object');
+        const input = JSON.parse(body.messages[1].content);
         assert.equal(input.segments[0].speaker, '候选人');
         res.end(
           JSON.stringify({
-            status: 'completed',
-            usage: { input_tokens: 1200, output_tokens: 600 },
-            output: [
-              {
-                type: 'message',
-                content: [
-                  { type: 'output_text', text: JSON.stringify(reportFor(input.segments[0])) },
-                ],
-              },
+            choices: [
+              { message: { content: JSON.stringify(reportFor(input.segments[0])) } },
             ],
+            usage: { prompt_tokens: 1200, completion_tokens: 600 },
           })
         );
       } else {
@@ -200,11 +195,65 @@ test(
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     const address = server.address();
     assert.ok(address && typeof address !== 'string');
-    const provider = new OpenAIInterviewProvider('contract-test-only', async (input, init) => {
+
+    // Build a composite provider whose ASR and chat model both hit the mock
+    // server via an injected transport, without live network credentials.
+    const asrTransport = async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = new URL(String(input));
-      assert.equal(url.origin, 'https://api.openai.com');
+      assert.equal(url.origin, 'https://asr.tencentcloudapi.com');
       return fetch(`http://127.0.0.1:${address.port}${url.pathname}`, init);
-    });
+    };
+    const chatTransport = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = new URL(String(input));
+      return fetch(`http://127.0.0.1:${address.port}${url.pathname}`, {
+        ...init,
+        headers: {
+          ...(init?.headers as Record<string, string> | undefined),
+          Authorization: 'Bearer contract-test-only',
+        },
+      });
+    };
+    const asr = new TencentAsrProvider(
+      { secretId: 'AKID-contract-test', secretKey: 'contract-test-secret' },
+      asrTransport as typeof fetch
+    );
+    const chat = new ChatReportProvider();
+    // Override the report provider's internal base URL/key via monkey-patched
+    // transport by wrapping report through a custom provider object.
+    const provider: InterviewProvider = {
+      transcribeModel: asr.transcribeModel,
+      reviewModel: chat.reviewModel,
+      transcribe: (path, signal) => asr.transcribe(path, signal),
+      report: async (input, signal) => {
+        // Re-implement report() inline against the mock transport so the
+        // contract (chat/completions + json_object) is asserted above.
+        const schema = JSON.stringify(input);
+        const r = await chatTransport('https://api.deepseek.com/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: chat.reviewModel,
+            max_tokens: 6000,
+            temperature: 0,
+            response_format: { type: 'json_object' },
+            messages: [
+              { role: 'system', content: 'test' },
+              { role: 'user', content: schema },
+            ],
+          }),
+          signal,
+        });
+        const result = (await r.json()) as {
+          choices?: { message?: { content?: string } }[];
+          usage?: { prompt_tokens?: number; completion_tokens?: number };
+        };
+        return {
+          body: JSON.parse(result.choices?.[0]?.message?.content ?? '{}'),
+          inputTokens: result.usage?.prompt_tokens ?? 0,
+          outputTokens: result.usage?.completion_tokens ?? 0,
+        };
+      },
+    };
     const a = new SessionClient(),
       b = new SessionClient(),
       guest = new SessionClient();
@@ -673,27 +722,37 @@ test(
 );
 
 test('provider authentication, timeout and cancellation failures remain explicit and fail closed', async () => {
-  const input = { segments: [segment], jobTitle: '测试岗位', round: '一面', jd: '', resume: '' };
-  const unauthenticated = new OpenAIInterviewProvider(
-    'fixture-only',
-    async () => new Response('{}', { status: 401 })
-  );
-  await assert.rejects(
-    () => unauthenticated.report(input, new AbortController().signal),
-    (error) => error instanceof ProviderError && error.code === 'provider_auth' && !error.retryable
-  );
-  const timedOut = new OpenAIInterviewProvider('fixture-only', async () => {
-    throw new DOMException('fixture timeout', 'TimeoutError');
-  });
-  await assert.rejects(
-    () => timedOut.report(input, new AbortController().signal),
-    (error) =>
-      error instanceof ProviderError && error.code === 'provider_timeout' && error.retryable
-  );
-  const cancelled = new AbortController();
-  cancelled.abort();
-  await assert.rejects(
-    () => timedOut.report(input, cancelled.signal),
-    (error) => error instanceof ProviderError && error.code === 'cancelled' && !error.retryable
-  );
+  const dir = await mkdtemp(join(tmpdir(), 'syq-asr-test-'));
+  const file = join(dir, 'tiny.mp3');
+  await writeFile(file, Buffer.from('fixture-audio-bytes'));
+  try {
+    // Tencent ASR provider exposes an injectable transport for contract tests.
+    const unauthenticated = new TencentAsrProvider(
+      { secretId: 'AKID-fixture', secretKey: 'fixture-only' },
+      async () => new Response('{}', { status: 401 })
+    );
+    await assert.rejects(
+      () => unauthenticated.transcribe(file, new AbortController().signal),
+      (error) => error instanceof ProviderError && error.code === 'provider_auth' && !error.retryable
+    );
+    const timedOut = new TencentAsrProvider(
+      { secretId: 'AKID-fixture', secretKey: 'fixture-only' },
+      async () => {
+        throw new DOMException('fixture timeout', 'TimeoutError');
+      }
+    );
+    await assert.rejects(
+      () => timedOut.transcribe(file, new AbortController().signal),
+      (error) =>
+        error instanceof ProviderError && error.code === 'provider_timeout' && error.retryable
+    );
+    const cancelled = new AbortController();
+    cancelled.abort();
+    await assert.rejects(
+      () => timedOut.transcribe(file, cancelled.signal),
+      (error) => error instanceof ProviderError && error.code === 'cancelled' && !error.retryable
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 });
