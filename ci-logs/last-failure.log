@@ -1,0 +1,33 @@
+run_number: 5
+run_id: 43603942625
+sha: ec3190a20cd2a01978594566ecd7f1d13a64433c
+time: 2026-11-14T14:16:12Z
+--- 采集脚本输出 ---
+⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715
+/home/runner/work/shangan-youqi/shangan-youqi/node_modules/@supabase/realtime-js/dist/main/lib/websocket-factory.js:86
+        throw new Error(errorMessage);
+              ^
+
+Error: Node.js detected but native WebSocket not found.
+
+Suggested solution: Ensure you are running Node.js 22+ or provide a WebSocket implementation via the transport option.
+    at WebSocketFactory.getWebSocketConstructor (/home/runner/work/shangan-youqi/shangan-youqi/node_modules/@supabase/realtime-js/dist/main/lib/websocket-factory.js:86:15)
+    at RealtimeClient._initializeOptions (/home/runner/work/shangan-youqi/shangan-youqi/node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js:656:164)
+    at new RealtimeClient (/home/runner/work/shangan-youqi/shangan-youqi/node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js:185:43)
+    at SupabaseClient._initRealtimeClient (file:///home/runner/work/shangan-youqi/shangan-youqi/node_modules/@supabase/supabase-js/dist/index.mjs:867:10)
+    at new SupabaseClient (file:///home/runner/work/shangan-youqi/shangan-youqi/node_modules/@supabase/supabase-js/dist/index.mjs:674:24)
+    at createClient (file:///home/runner/work/shangan-youqi/shangan-youqi/node_modules/@supabase/supabase-js/dist/index.mjs:900:9)
+    at file:///home/runner/work/shangan-youqi/shangan-youqi/scripts/radar-collect.mjs:52:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v20.20.2
+--- 密钥自检输出 ---
+✓ NEXT_PUBLIC_SUPABASE_URL 已就位（长度 40，开头 [https://]，结尾 [...e.co]）
+✓ SUPABASE_SERVICE_ROLE_KEY 已就位（长度 41，开头 [sb_secre]，结尾 [...BJFO]）
+✓ DEEPSEEK_API_KEY 已就位（长度 35，开头 [sk-c253b]，结尾 [...1b4c]）
+✓ 数据库地址格式正确（40 字符）
+✓ 数据库密钥格式正确（41 字符）
+--- 应用运行日志 ---
+(没有产生 logs/radar-collect.log)
