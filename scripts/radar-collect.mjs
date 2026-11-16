@@ -1025,8 +1025,110 @@ async function main() {
   );
 }
 
-main().catch((e) => {
-  console.error('采集异常：', e);
-  logRun(`异常中断：${(e && (e.stack || e.message)) || String(e)}`);
-  process.exit(1);
-});
+// ---------------------------------------------------------------- 历史回填
+// 对已有 verified 面经重新跑 AI 归纳：补新格式摘要（背景→流程→考察重点）+ 难度/结果。
+async function backfill() {
+  console.log('===== 开始回填历史面经（新格式摘要 + 难度/结果）=====');
+  const { data: exps, error: expErr } = await db
+    .from('interview_experiences')
+    .select('id,title,source_record_id')
+    .eq('verification_status', 'verified')
+    .order('published_at', { ascending: false });
+  if (expErr) {
+    console.error('查询面经失败：', expErr.message);
+    process.exit(1);
+  }
+  const total = exps?.length || 0;
+  console.log(`待回填 ${total} 条`);
+
+  let updated = 0;
+  let reviewed = 0;
+  let skipped = 0;
+  let failed = 0;
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  for (let i = 0; i < total; i++) {
+    const exp = exps[i];
+    if (!exp.source_record_id) {
+      skipped++;
+      continue;
+    }
+    const { data: rec } = await db
+      .from('interview_source_records')
+      .select('title,raw_excerpt')
+      .eq('id', exp.source_record_id)
+      .maybeSingle();
+    const title = rec?.title || exp.title;
+    const excerpt = rec?.raw_excerpt || '';
+    if (!excerpt && !title) {
+      skipped++;
+      continue;
+    }
+
+    const { data: parsed, error: aiErr } = await aiStructure({ title, keywords: '', excerpt });
+    if (aiErr || !parsed) {
+      console.log(`✗ ${title.slice(0, 26)} | AI 失败：${aiErr || '返回空'}`);
+      failed++;
+      continue;
+    }
+
+    // 1) 更新 summary（新格式，长度达标才覆盖）
+    const summary = cleanText(parsed.summary || '');
+    let okSummary = false;
+    if (summary.length >= 60) {
+      const { error: upErr } = await db.from('interview_experiences').update({ summary }).eq('id', exp.id);
+      if (!upErr) {
+        updated++;
+        okSummary = true;
+      }
+    }
+
+    // 2) 难度 / 结果 → 原作者评价（upsert）
+    const difficultyRaw = String(parsed.difficulty || '').toLowerCase().trim();
+    const difficulty =
+      DIFFICULTY_LABELS[difficultyRaw] ||
+      (['简单', '中等', '困难', '较难', '偏难'].includes(String(parsed.difficulty || '').trim())
+        ? String(parsed.difficulty || '').trim()
+        : null);
+    const result = cleanText(parsed.result || '').slice(0, 100);
+    if (difficulty || result) {
+      const { data: existing } = await db
+        .from('interview_reviews')
+        .select('id')
+        .eq('experience_id', exp.id)
+        .eq('reviewer_kind', 'original_author')
+        .maybeSingle();
+      const row = { difficulty: difficulty || null, result: result || null };
+      if (existing) {
+        await db.from('interview_reviews').update(row).eq('id', existing.id);
+      } else {
+        await db
+          .from('interview_reviews')
+          .insert({ experience_id: exp.id, reviewer_kind: 'original_author', ...row, review_text: '' });
+      }
+      reviewed++;
+    }
+
+    console.log(
+      `✓ ${title.slice(0, 26)} | 摘要${okSummary ? '✓' : '—'} 难度/结果${difficulty || result ? '✓' : '—'}`
+    );
+    if ((i + 1) % 4 === 0) await sleep(600);
+  }
+
+  console.log(
+    `回填完成：更新摘要 ${updated} · 写评价 ${reviewed} · 跳过 ${skipped} · 失败 ${failed}`
+  );
+}
+
+if (argv.includes('--backfill')) {
+  backfill().catch((e) => {
+    console.error('回填异常：', e);
+    process.exit(1);
+  });
+} else {
+  main().catch((e) => {
+    console.error('采集异常：', e);
+    logRun(`异常中断：${(e && (e.stack || e.message)) || String(e)}`);
+    process.exit(1);
+  });
+}
