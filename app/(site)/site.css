@@ -1808,6 +1808,56 @@
 .radar-stars button.active {
   color: #e6b93f;
 }
+.radar-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+.radar-overview-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.radar-overview-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+.radar-overview-value {
+  font-size: 14px;
+  font-weight: 500;
+}
+.radar-summary {
+  line-height: 1.8;
+  white-space: pre-wrap;
+  margin: 0;
+}
+.radar-round-group {
+  margin-bottom: 22px;
+}
+.radar-round-group:last-child {
+  margin-bottom: 0;
+}
+.radar-round-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  margin: 0 0 4px;
+}
+.radar-round-count {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+}
+.radar-source-tip {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
 @media (max-width: 720px) {
   .radar-company-banner {
     flex-direction: column;

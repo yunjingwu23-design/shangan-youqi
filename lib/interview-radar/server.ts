@@ -127,18 +127,59 @@ export async function listExperiences(filters: {
   return (data ?? []) as InterviewExperience[];
 }
 
-export async function getExperience(id: string): Promise<InterviewExperience | null> {
+export type ExperienceDetail = {
+  id: string;
+  company_id: string;
+  job_role_id: string;
+  recruitment_type: string;
+  cohort: string;
+  title: string;
+  summary: string;
+  source_record_id: string | null;
+  origin: string;
+  verification_status: string;
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+  company_name: string;
+  company_industry: string;
+  job_role_name: string;
+};
+
+export async function getExperience(id: string): Promise<ExperienceDetail | null> {
   const db = readClient();
   const { data, error } = await db
     .from('interview_experiences')
     .select(
-      'id,company_id,job_role_id,recruitment_type,cohort,title,summary,source_record_id,origin,verification_status,published_at,created_at,updated_at'
+      'id,company_id,job_role_id,recruitment_type,cohort,title,summary,source_record_id,origin,verification_status,published_at,created_at,updated_at,companies(name,industry),job_roles(name,category)'
     )
     .eq('id', id)
     .abortSignal(AbortSignal.timeout(8000))
     .maybeSingle();
   radarError(error);
-  return (data as InterviewExperience | null) ?? null;
+  if (!data) return null;
+  const row = data as Record<string, unknown> & {
+    companies?: { name?: string; industry?: string } | null;
+    job_roles?: { name?: string; category?: string } | null;
+  };
+  return {
+    id: String(row.id),
+    company_id: String(row.company_id),
+    job_role_id: String(row.job_role_id),
+    recruitment_type: String(row.recruitment_type),
+    cohort: String(row.cohort ?? ''),
+    title: String(row.title ?? ''),
+    summary: String(row.summary ?? ''),
+    source_record_id: row.source_record_id ? String(row.source_record_id) : null,
+    origin: String(row.origin ?? 'external'),
+    verification_status: String(row.verification_status ?? ''),
+    published_at: row.published_at ? String(row.published_at) : null,
+    created_at: String(row.created_at ?? ''),
+    updated_at: String(row.updated_at ?? ''),
+    company_name: row.companies?.name ?? '',
+    company_industry: row.companies?.industry ?? '',
+    job_role_name: row.job_roles?.name ?? '',
+  };
 }
 
 export async function listQuestions(filters: {
@@ -189,6 +230,18 @@ export async function listQuestionsForExperience(
     .abortSignal(AbortSignal.timeout(8000));
   radarError(error);
   return (data ?? []) as InterviewQuestion[];
+}
+
+export async function listTagsForExperience(experienceId: string): Promise<string[]> {
+  const db = readClient();
+  const { data, error } = await db
+    .from('interview_tags')
+    .select('tag')
+    .eq('experience_id', experienceId)
+    .order('tag')
+    .abortSignal(AbortSignal.timeout(8000));
+  radarError(error);
+  return (data ?? []).map((r: { tag: string }) => r.tag);
 }
 
 export async function listAuthorReviews(experienceId: string): Promise<InterviewReview[]> {

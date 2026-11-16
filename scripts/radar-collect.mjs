@@ -102,6 +102,7 @@ const RECRUITMENT = [
   'daily_internship', 'conversion_internship', 'autumn_recruitment', 'spring_recruitment',
   'undetermined',
 ];
+const DIFFICULTY_LABELS = { easy: '简单', medium: '中等', hard: '困难' };
 
 const PLATFORMS = [
   [/nowcoder\.com/i, '牛客网'],
@@ -534,14 +535,15 @@ function aiConfig() {
 const AI_SYSTEM = `你是面经信息结构化助手。你只会拿到帖子的标题、平台关键词、平台分享摘要（都不是完整正文）。
 任务：基于这些有限信息做结构化归纳。硬性规则：
 1. 只能使用给定材料中明确出现的信息，绝不推断、补充、编造。
-2. 公司、岗位、招聘类型、轮次、面试题，材料没写就返回 null 或空数组。
-3. summary 是你自己的客观归纳（2-4 句，150-300 字），不得照抄原文长段落，不得虚构细节。
+2. 公司、岗位、招聘类型、轮次、面试题、难度、结果，材料没写就返回 null 或空数组。
+3. summary 是你自己的客观归纳，固定按「面试背景 → 面试流程 → 考察重点」三段写（每段 1-2 句，合计 150-260 字），不得照抄原文长段落，不得虚构细节；材料缺少某段就省略该段。
 4. questions 只收材料里明确以提问形式出现的内容；无法确认是真实面试题时 confidence 填 "inferred"。
-5. tags 用 3-6 个短标签（如「无八股」「手撕代码」「压力面」），材料不支持就少给。
-6. 只输出 JSON 对象，不要 markdown 代码块，不要解释。
+5. difficulty 只在材料明确体现难度时填 easy/medium/hard，否则 null；result 只在作者明确公开结果时填（如「已通过」「未通过」「已录用」「进行中」），否则 null。
+6. tags 用 3-6 个短标签（如「无八股」「手撕代码」「压力面」），材料不支持就少给。
+7. 只输出 JSON 对象，不要 markdown 代码块，不要解释。
 
 JSON 结构：
-{"is_interview_post":boolean,"company":string|null,"job_role":string|null,"role_category":"${ROLE_CATEGORIES.join('|')}","recruitment_type":"${RECRUITMENT.join('|')}","cohort":string|null,"rounds":["${ROUNDS.join('"|"')}"],"questions":[{"text":string,"category":"${QUESTION_CATEGORIES.join('|')}","confidence":"verified|pending|inferred","round":"${ROUNDS.join('|')}"}],"summary":string,"tags":[string],"reason":string}`;
+{"is_interview_post":boolean,"company":string|null,"job_role":string|null,"role_category":"${ROLE_CATEGORIES.join('|')}","recruitment_type":"${RECRUITMENT.join('|')}","cohort":string|null,"rounds":["${ROUNDS.join('"|"')}"],"questions":[{"text":string,"category":"${QUESTION_CATEGORIES.join('|')}","confidence":"verified|pending|inferred","round":"${ROUNDS.join('|')}"}],"summary":string,"difficulty":"easy|medium|hard"|null,"result":string|null,"tags":[string],"reason":string}`;
 
 function parseJsonLoose(text) {
   let s = String(text || '').trim();
@@ -976,6 +978,24 @@ async function main() {
       .slice(0, 8)
       .map((tag) => ({ experience_id: exp.id, tag: tag.slice(0, 60) }));
     if (tags.length) await db.from('interview_tags').insert(tags);
+
+    // 7) 难度 / 结果 → 原作者评价（仅当材料明确体现时写入）
+    const difficultyRaw = String(parsed.difficulty || '').toLowerCase().trim();
+    const difficulty =
+      DIFFICULTY_LABELS[difficultyRaw] ||
+      (['简单', '中等', '困难', '较难', '偏难'].includes(String(parsed.difficulty || '').trim())
+        ? String(parsed.difficulty || '').trim()
+        : null);
+    const resultText = cleanText(parsed.result || '').slice(0, 100);
+    if (difficulty || resultText) {
+      await db.from('interview_reviews').insert({
+        experience_id: exp.id,
+        reviewer_kind: 'original_author',
+        difficulty: difficulty || null,
+        result: resultText || null,
+        review_text: '',
+      });
+    }
 
     report.published++;
     written++;
