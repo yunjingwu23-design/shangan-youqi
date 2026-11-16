@@ -15,7 +15,6 @@ import {
   interviewRounds,
   questionCategories,
   recruitmentTypes,
-  roleCategories,
 } from '@/lib/interview-radar/types';
 
 const ROUND_ORDER = [
